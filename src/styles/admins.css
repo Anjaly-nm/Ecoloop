@@ -1,0 +1,125 @@
+/* Layout */
+.admin-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f4f7f6;
+}
+
+/* Header */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: linear-gradient(90deg, #76b852, #8dc26f);
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.admin-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logout-btn {
+  background-color: white;
+  color: #76b852;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #e0f2e9;
+}
+
+/* Container */
+.admin-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: 220px;
+  background-color: #2e7d32;
+  color: white;
+  padding-top: 2rem;
+}
+
+.admin-sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.admin-sidebar li {
+  margin: 1rem 0;
+}
+
+.admin-sidebar a {
+  text-decoration: none;
+  color: white;
+  font-size: 1.1rem;
+  padding: 0.6rem 1.2rem;
+  display: block;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+
+.admin-sidebar a:hover {
+  background-color: #1b5e20;
+  color: #a8e063;
+}
+
+/* Main Content */
+.admin-main {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+/* Cards */
+.admin-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 2rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.admin-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+
+.admin-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+}
+
+.small-card {
+  text-align: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 1.5rem 1rem;
+  transition: 0.3s;
+}
+
+.small-card:hover {
+  background: linear-gradient(90deg, #76b852, #8dc26f);
+  color: white;
+}

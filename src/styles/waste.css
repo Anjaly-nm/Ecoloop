@@ -1,0 +1,291 @@
+/* waste.css */
+
+/* ============================= */
+/* Page Background with Image */
+.waste-page {
+  font-family: 'Arial', sans-serif;
+  background-image: url("../../public/images/y.jpg"); /* ✅ fixed: use public path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Optional overlay */
+.waste-page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.3);
+  z-index: -1;
+}
+
+/* ============================= */
+/* Header */
+.waste-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #0b460f;
+  color: white;
+  padding: 15px 30px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.waste-header .profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-icon {
+  font-size: 2rem;
+}
+
+.home-btn {
+  background-color: #4aaeac;
+  color: #060b07;
+  border: none;
+  padding: 8px 16px;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.home-btn:hover {
+  background-color: #c8e6c9;
+}
+
+/* ============================= */
+/* Dashboard Cards */
+.dashboard-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  padding: 20px 30px;
+  position: relative;
+  z-index: 1;
+}
+
+.dash-card {
+  background-color: #ffffff;
+  padding: 25px 15px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: 0.3s;
+  font-size: 1.1rem;
+}
+
+.dash-card:hover {
+  background-color: #a5d6a7;
+  color: #1b5e20;
+  transform: translateY(-5px);
+}
+
+/* ============================= */
+/* Waste Form */
+.form-container {
+  max-width: 500px;
+  margin: 30px auto 50px;
+  background-color: #ffffff;
+  padding: 25px 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  position: relative;
+  z-index: 1;
+}
+
+.waste-form h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #000000;
+}
+
+.waste-form label {
+  display: block;
+  margin: 12px 0 5px;
+  font-weight: bold;
+}
+
+.waste-form input,
+.waste-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  margin-bottom: 15px;
+  transition: 0.3s;
+}
+
+.waste-form input:focus,
+.waste-form select:focus {
+  outline: none;
+  border-color: #2e7d79;
+}
+
+.submit-btn {
+  width: 100%;
+  background-color: #8762c7;
+  color: white;
+  padding: 12px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.submit-btn:hover {
+  background-color: #3658b7;
+}
+
+/* ============================= */
+/* Submissions Table */
+.submissions-container {
+  margin: 30px auto;
+  width: 95%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  position: relative;
+  z-index: 1;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.submissions-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #0b460f;
+}
+
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.styled-table thead {
+  background: linear-gradient(135deg, #0b460f, #4aaeac);
+  color: #fff;
+  text-align: left;
+}
+
+.styled-table thead th {
+  padding: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.styled-table tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
+}
+
+.styled-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.styled-table tbody tr:hover {
+  background: #e8f5e9;
+  transform: scale(1.01);
+}
+
+.styled-table td {
+  padding: 12px 14px;
+  color: #333;
+}
+
+/* Status badges */
+.status {
+  font-weight: bold;
+  text-transform: capitalize;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  display: inline-block;
+}
+
+.status.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status.approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status.rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* ============================= */
+/* Delete Button */
+.delete-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}
+
+/* ============================= */
+/* Placeholder content */
+.placeholder {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.1rem;
+  color: #555;
+  position: relative;
+  z-index: 1;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================= */
+/* Responsive */
+@media (max-width: 600px) {
+  .waste-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .dashboard-buttons {
+    grid-template-columns: 1fr;
+  }
+}
