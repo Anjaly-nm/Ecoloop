@@ -1,291 +1,131 @@
-/* waste.css */
-
 /* ============================= */
-/* Page Background with Image */
-.waste-page {
-  font-family: 'Arial', sans-serif;
-  background-image: url("../../public/images/y.jpg"); /* ✅ fixed: use public path */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  min-height: 100vh;
-  position: relative;
-}
-
-/* Optional overlay */
-.waste-page::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(255, 255, 255, 0.3);
-  z-index: -1;
-}
-
+/* Waste Prediction DatePicker Overrides */
 /* ============================= */
-/* Header */
-.waste-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #0b460f;
-  color: white;
-  padding: 15px 30px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  z-index: 1;
+
+/* Container for the inline date picker */
+.datepicker-container {
+    /* Ensures the calendar is centered/contained properly */
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
 }
 
-.waste-header .profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* Base style for the entire calendar component */
+.react-datepicker {
+    font-family: 'Arial', sans-serif; /* Match your page font */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff; /* White background for the calendar itself */
+    color: #333;
+    padding: 5px;
 }
 
-.profile-icon {
-  font-size: 2rem;
+/* Calendar header (Month/Year display and navigation) */
+.react-datepicker__header {
+    background-color: #4aaeac; /* Teal color from your waste-header */
+    border-bottom: 1px solid #0b460f;
+    padding-top: 8px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
 }
 
-.home-btn {
-  background-color: #4aaeac;
-  color: #060b07;
-  border: none;
-  padding: 8px 16px;
-  font-weight: bold;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: 0.3s;
+/* Month/Year title and Day names */
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+    font-weight: bold;
+    color: white; /* Header text color */
 }
 
-.home-btn:hover {
-  background-color: #c8e6c9;
+/* Day names (MON, TUE, WED, etc.) */
+.react-datepicker__day-names {
+    color: white;
 }
 
-/* ============================= */
-/* Dashboard Cards */
-.dashboard-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
-  padding: 20px 30px;
-  position: relative;
-  z-index: 1;
+.react-datepicker__day-name {
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
-.dash-card {
-  background-color: #ffffff;
-  padding: 25px 15px;
-  border-radius: 10px;
-  text-align: center;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  transition: 0.3s;
-  font-size: 1.1rem;
+/* Day cell styles (base) */
+.react-datepicker__day {
+    color: #333; /* Default day color */
+    font-weight: 500;
+    width: 2.2rem;
+    line-height: 2.2rem;
+    height: 2.2rem;
+    margin: 0.166rem; /* Space between days */
 }
 
-.dash-card:hover {
-  background-color: #a5d6a7;
-  color: #1b5e20;
-  transform: translateY(-5px);
+/* Day hover effect */
+.react-datepicker__day:hover {
+    background-color: #c8e6c9; /* Match home-btn:hover */
+    color: #1b5e20;
+    border-radius: 50%;
 }
 
-/* ============================= */
-/* Waste Form */
-.form-container {
-  max-width: 500px;
-  margin: 30px auto 50px;
-  background-color: #ffffff;
-  padding: 25px 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-  position: relative;
-  z-index: 1;
+/* Selected day style */
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+    background-color: #8762c7 !important; /* Match your form submit button color */
+    color: white !important;
+    border-radius: 50%;
+    font-weight: bold;
 }
 
-.waste-form h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #000000;
+/* Weekend day style (using the custom weekend-day class) */
+.weekend-day {
+    color: #e74c3c; /* Match your delete-btn red */
 }
 
-.waste-form label {
-  display: block;
-  margin: 12px 0 5px;
-  font-weight: bold;
+/* Ensure selected date respects weekend styling colors */
+.react-datepicker__day--selected.weekend-day {
+    background-color: #8762c7 !important;
+    color: white !important;
 }
 
-.waste-form input,
-.waste-form select {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-  margin-bottom: 15px;
-  transition: 0.3s;
+/* Day outside the current month (dim it) */
+.react-datepicker__day--outside-month {
+    color: #ccc;
 }
 
-.waste-form input:focus,
-.waste-form select:focus {
-  outline: none;
-  border-color: #2e7d79;
+/* Navigation buttons (arrows) */
+.react-datepicker__navigation--previous,
+.react-datepicker__navigation--next {
+    top: 10px; /* Center with the month/year title */
+}
+.react-datepicker__navigation-icon::before {
+    border-color: white !important; /* Ensure arrows are white */
 }
 
-.submit-btn {
-  width: 100%;
-  background-color: #8762c7;
-  color: white;
-  padding: 12px;
-  font-size: 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.3s;
+/* Dark Mode Overrides (You need to update your main component logic to toggle these classes if you are using dark mode based on theme state) */
+.dark-calendar {
+    background-color: #1f2937; /* bg-gray-800 */
+    color: #e5e7eb; /* text-gray-200 */
+    border-color: #4b5563; /* border-gray-600 */
 }
-
-.submit-btn:hover {
-  background-color: #3658b7;
+.dark-calendar .react-datepicker__header {
+    background-color: #374151; /* bg-gray-700 */
+    border-bottom: 1px solid #4b5563;
+    color: #e5e7eb;
 }
-
-/* ============================= */
-/* Submissions Table */
-.submissions-container {
-  margin: 30px auto;
-  width: 95%;
-  max-width: 900px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 20px;
-  position: relative;
-  z-index: 1;
-  animation: fadeIn 0.4s ease-in-out;
+.dark-calendar .react-datepicker__current-month,
+.dark-calendar .react-datepicker__day-name {
+    color: #e5e7eb;
 }
-
-.submissions-container h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #0b460f;
+.dark-calendar .react-datepicker__day {
+    color: #e5e7eb;
 }
-
-.styled-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 15px;
-  border-radius: 8px;
-  overflow: hidden;
+.dark-calendar .react-datepicker__day:hover {
+    background-color: #4b5563; /* hover:bg-gray-600 */
+    border-radius: 50%;
 }
-
-.styled-table thead {
-  background: linear-gradient(135deg, #0b460f, #4aaeac);
-  color: #fff;
-  text-align: left;
+.dark-calendar .react-datepicker__day--selected,
+.dark-calendar .react-datepicker__day--keyboard-selected {
+    background-color: #3b82f6 !important; /* bg-blue-500 */
+    color: white;
+    border-radius: 50%;
 }
-
-.styled-table thead th {
-  padding: 14px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.styled-table tbody tr {
-  border-bottom: 1px solid #e0e0e0;
-  transition: all 0.2s ease;
-}
-
-.styled-table tbody tr:nth-child(even) {
-  background: #f9f9f9;
-}
-
-.styled-table tbody tr:hover {
-  background: #e8f5e9;
-  transform: scale(1.01);
-}
-
-.styled-table td {
-  padding: 12px 14px;
-  color: #333;
-}
-
-/* Status badges */
-.status {
-  font-weight: bold;
-  text-transform: capitalize;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  display: inline-block;
-}
-
-.status.pending {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.status.approved {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.status.rejected {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-/* ============================= */
-/* Delete Button */
-.delete-btn {
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  font-size: 0.9rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.delete-btn:hover {
-  background-color: #c0392b;
-  transform: scale(1.05);
-}
-
-/* ============================= */
-/* Placeholder content */
-.placeholder {
-  text-align: center;
-  padding: 40px;
-  font-size: 1.1rem;
-  color: #555;
-  position: relative;
-  z-index: 1;
-}
-
-/* Fade-in animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ============================= */
-/* Responsive */
-@media (max-width: 600px) {
-  .waste-header {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
-  }
-
-  .dashboard-buttons {
-    grid-template-columns: 1fr;
-  }
+.dark-calendar .weekend-day {
+    color: #fca5a5; /* text-red-300 in dark mode */
 }

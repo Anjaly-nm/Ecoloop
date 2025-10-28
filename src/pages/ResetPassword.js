@@ -1,17 +1,16 @@
 import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../styles/forgot.css"; // reuse styling
+import { useParams, useNavigate } from "react-router-dom";
+import "../styles/login.css";
 
 const ResetPassword = () => {
   const { token } = useParams();
   const navigate = useNavigate();
-
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const handleReset = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     setError("");
@@ -22,28 +21,32 @@ const ResetPassword = () => {
         { password }
       );
       setMessage(res.data.message);
-      setTimeout(() => navigate("/login"), 2000); // redirect after 2s
+      setTimeout(() => navigate("/login"), 3000); // redirect to login
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong");
+      setError(err.response?.data?.message || "Error resetting password");
     }
   };
 
   return (
-    <div className="forgot-page">
-      <div className="forgot-box">
+    <div className="login-page">
+      <div className="login-box">
         <h2>Reset Password</h2>
-        <form onSubmit={handleReset}>
+
+        <form onSubmit={handleSubmit}>
           <label>New Password</label>
           <input
             type="password"
-            placeholder="Enter new password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
+            placeholder="Enter new password"
           />
+
           <button type="submit">Reset Password</button>
         </form>
-        {message && <p style={{ color: "lightgreen" }}>{message}</p>}
-        {error && <p style={{ color: "red" }}>{error}</p>}
+
+        {message && <p className="success">{message}</p>}
+        {error && <p className="error">{error}</p>}
       </div>
     </div>
   );

@@ -1,10 +1,17 @@
+/*
+ * RESPONSIVENESS FIXES:
+ * 1. flex-wrap: wrap is added to allow stacking on smaller screens.
+ * 2. overflow: hidden is removed to allow vertical scrolling when content overflows the viewport.
+ */
+
 /* Full Page Layout */
 .register-page {
   display: flex;
-  height: 100vh;
+  min-height: 100vh; /* Use min-height so content can push the container taller */
   width: 100%;
   background: linear-gradient(135deg, #a8e063, #56ab2f);
-  overflow: hidden;
+  flex-wrap: wrap; /* CRITICAL: Allows the image and form to stack on smaller screens */
+  /* REMOVED: overflow: hidden; -> allows vertical scrolling when needed */
 }
 
 /* Left side image */
@@ -15,6 +22,7 @@
   justify-content: center;
   background: #f0fff4;
   animation: fadeInLeft 1.2s ease-in-out;
+  min-width: 300px; /* Prevents the image from shrinking too much on smaller desktop views */
 }
 
 .register-image img {
@@ -29,7 +37,7 @@
   transform: scale(1.05);
 }
 
-/* Right side form */
+/* Right side form container */
 .register-form-container {
   flex: 1;
   display: flex;
@@ -37,11 +45,13 @@
   justify-content: center;
   background: #ffffff;
   animation: fadeInRight 1.2s ease-in-out;
+  min-width: 320px; /* Ensures the form panel has enough space on smaller screens before stacking */
+  padding: 20px 0; /* Add vertical padding for when it stacks */
 }
 
 .register-form {
-  width: 80%;
-  max-width: 420px;
+  width: 95%; /* Increased from 80% to use more space on small screens */
+  max-width: 450px; /* Slightly increased max-width for better appearance */
   padding: 30px;
   background: #ffffff;
   border-radius: 20px;
@@ -84,6 +94,7 @@ input, select {
   font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
+  box-sizing: border-box; /* Ensure padding doesn't push the elements beyond 100% width */
 }
 
 input:focus, select:focus {
@@ -134,7 +145,49 @@ input[name="collectorId"] {
   animation: fadeIn 0.8s ease-in-out;
 }
 
-/* Animations */
+/*
+ * MEDIA QUERY FOR MOBILE DEVICES (max-width: 768px)
+ * 1. Stacks the image and form vertically (column).
+ * 2. Removes the vertical centering on the form container so content flows naturally and allows scrolling.
+ * 3. Hides the image for a cleaner mobile experience (optional, but common).
+ */
+@media (max-width: 768px) {
+  .register-page {
+    /* Set min-height to initial to avoid forcing full viewport height when stacked */
+    min-height: initial;
+    /* Ensure the background gradient still covers the whole scrolled page */
+    padding-bottom: 50px;
+  }
+
+  .register-image {
+    display: none; /* Hide the large image on mobile for better focus on the form */
+    /* If you want to keep the image, change the styles to:
+    flex: 1 1 100%;
+    order: 1;
+    max-height: 200px;
+    */
+  }
+
+  .register-form-container {
+    flex: 1 1 100%; /* Form now takes 100% of the width */
+    order: 2; /* Ensures the form comes after the image (if image is visible) */
+
+    /* Remove vertical centering to allow natural scrolling */
+    align-items: flex-start;
+    justify-content: center;
+    min-height: auto;
+  }
+
+  .register-form {
+    max-width: 100%;
+    border-radius: 0;
+    box-shadow: none; /* Remove shadows on mobile for a lighter look */
+    padding: 20px;
+    margin-top: 0;
+  }
+}
+
+/* Animations (No changes here, keeping original animations) */
 @keyframes fadeInLeft {
   from { opacity: 0; transform: translateX(-50px); }
   to { opacity: 1; transform: translateX(0); }

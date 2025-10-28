@@ -65,7 +65,7 @@ const Home = () => {
 
   const heroStyle = {
     minHeight: '100vh',
-    backgroundImage: 'url("images/ka.jpg")',
+    backgroundImage: 'url("images/nice.jpg")',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
@@ -189,6 +189,14 @@ const Home = () => {
       <div style={headerStyle}>
         <div style={titleStyle}>ECOLOOP</div>
         <div style={buttonGroupStyle}>
+           <button
+            style={buttonStyle}
+            onMouseOver={e => Object.assign(e.target.style, buttonHoverStyle)}
+            onMouseOut={e => Object.assign(e.target.style, buttonStyle)}
+            onClick={() => navigate('/CollectorApply')}
+          >
+            Apply
+          </button>
           <button
             style={buttonStyle}
             onMouseOver={e => Object.assign(e.target.style, buttonHoverStyle)}
