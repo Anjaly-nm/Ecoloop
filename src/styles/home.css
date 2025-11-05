@@ -1,0 +1,140 @@
+/* Reset */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: lightgreen;
+  padding: 15px 40px;
+  box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #064420;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 25px;
+}
+
+.nav-links li a {
+  text-decoration: none;
+  font-weight: 500;
+  color: #064420;
+  transition: color 0.3s;
+}
+
+.nav-links li a:hover {
+  color: #2a9d8f;
+}
+
+/* Hero Section */
+.hero {
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: url("https://source.unsplash.com/1600x700/?green,eco") center/cover no-repeat;
+  color: white;
+  text-align: center;
+  animation: fadeIn 2s ease-in-out;
+}
+
+.hero-title {
+  font-size: 48px;
+  font-weight: bold;
+  animation: slideDown 1s ease;
+}
+
+.hero-subtitle {
+  margin: 15px 0;
+  font-size: 20px;
+  animation: fadeIn 2s ease;
+}
+
+.btn {
+  padding: 12px 25px;
+  background: #2a9d8f;
+  border-radius: 25px;
+  color: white;
+  font-size: 16px;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background: #21867a;
+}
+
+/* Gallery */
+.gallery {
+  padding: 50px 20px;
+  text-align: center;
+}
+
+.gallery h2 {
+  font-size: 32px;
+  margin-bottom: 20px;
+  color: #064420;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin-top: 30px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0px 6px 15px rgba(0,0,0,0.1);
+  transition: transform 0.4s;
+}
+
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.card h3 {
+  margin: 15px 0 10px;
+  color: #064420;
+}
+
+.card p {
+  padding: 0 15px 20px;
+  font-size: 14px;
+  color: #555;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

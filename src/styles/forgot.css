@@ -1,0 +1,98 @@
+/* ============================= */
+/* Page Layout */
+.forgot-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: 
+    linear-gradient(135deg, rgba(212,252,121,0.2), rgba(150,230,161,0.2)),
+    url("../../public/images/clarity.jpg") no-repeat center center fixed;
+  background-size: cover;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ============================= */
+/* Forgot Box */
+.forgot-box {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 40px;
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  width: 380px;
+  max-width: 90%;
+  color: #fff;
+  text-align: center;
+}
+
+.forgot-box h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+/* ============================= */
+/* Input */
+.forgot-box label {
+  display: block;
+  text-align: left;
+  margin: 10px 0 5px;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.forgot-box input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: none;
+  border-radius: 10px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.forgot-box input::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+/* ============================= */
+/* Button */
+.forgot-box button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: bold;
+  background: #2e7d32;
+  color: #fff;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.forgot-box button:hover {
+  background: #1b5e20;
+  transform: translateY(-2px);
+}
+
+/* ============================= */
+/* Back to login link */
+.back-link {
+  margin-top: 15px;
+  font-size: 0.9rem;
+}
+
+.back-link a {
+  color: #a5d6a7;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.back-link a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}

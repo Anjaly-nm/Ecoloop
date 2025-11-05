@@ -1,0 +1,131 @@
+/* ============================= */
+/* Waste Prediction DatePicker Overrides */
+/* ============================= */
+
+/* Container for the inline date picker */
+.datepicker-container {
+    /* Ensures the calendar is centered/contained properly */
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+/* Base style for the entire calendar component */
+.react-datepicker {
+    font-family: 'Arial', sans-serif; /* Match your page font */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff; /* White background for the calendar itself */
+    color: #333;
+    padding: 5px;
+}
+
+/* Calendar header (Month/Year display and navigation) */
+.react-datepicker__header {
+    background-color: #4aaeac; /* Teal color from your waste-header */
+    border-bottom: 1px solid #0b460f;
+    padding-top: 8px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+/* Month/Year title and Day names */
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+    font-weight: bold;
+    color: white; /* Header text color */
+}
+
+/* Day names (MON, TUE, WED, etc.) */
+.react-datepicker__day-names {
+    color: white;
+}
+
+.react-datepicker__day-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Day cell styles (base) */
+.react-datepicker__day {
+    color: #333; /* Default day color */
+    font-weight: 500;
+    width: 2.2rem;
+    line-height: 2.2rem;
+    height: 2.2rem;
+    margin: 0.166rem; /* Space between days */
+}
+
+/* Day hover effect */
+.react-datepicker__day:hover {
+    background-color: #c8e6c9; /* Match home-btn:hover */
+    color: #1b5e20;
+    border-radius: 50%;
+}
+
+/* Selected day style */
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+    background-color: #8762c7 !important; /* Match your form submit button color */
+    color: white !important;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+/* Weekend day style (using the custom weekend-day class) */
+.weekend-day {
+    color: #e74c3c; /* Match your delete-btn red */
+}
+
+/* Ensure selected date respects weekend styling colors */
+.react-datepicker__day--selected.weekend-day {
+    background-color: #8762c7 !important;
+    color: white !important;
+}
+
+/* Day outside the current month (dim it) */
+.react-datepicker__day--outside-month {
+    color: #ccc;
+}
+
+/* Navigation buttons (arrows) */
+.react-datepicker__navigation--previous,
+.react-datepicker__navigation--next {
+    top: 10px; /* Center with the month/year title */
+}
+.react-datepicker__navigation-icon::before {
+    border-color: white !important; /* Ensure arrows are white */
+}
+
+/* Dark Mode Overrides (You need to update your main component logic to toggle these classes if you are using dark mode based on theme state) */
+.dark-calendar {
+    background-color: #1f2937; /* bg-gray-800 */
+    color: #e5e7eb; /* text-gray-200 */
+    border-color: #4b5563; /* border-gray-600 */
+}
+.dark-calendar .react-datepicker__header {
+    background-color: #374151; /* bg-gray-700 */
+    border-bottom: 1px solid #4b5563;
+    color: #e5e7eb;
+}
+.dark-calendar .react-datepicker__current-month,
+.dark-calendar .react-datepicker__day-name {
+    color: #e5e7eb;
+}
+.dark-calendar .react-datepicker__day {
+    color: #e5e7eb;
+}
+.dark-calendar .react-datepicker__day:hover {
+    background-color: #4b5563; /* hover:bg-gray-600 */
+    border-radius: 50%;
+}
+.dark-calendar .react-datepicker__day--selected,
+.dark-calendar .react-datepicker__day--keyboard-selected {
+    background-color: #3b82f6 !important; /* bg-blue-500 */
+    color: white;
+    border-radius: 50%;
+}
+.dark-calendar .weekend-day {
+    color: #fca5a5; /* text-red-300 in dark mode */
+}
