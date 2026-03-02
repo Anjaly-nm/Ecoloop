@@ -2,9 +2,8 @@ const express = require("express");
 const router = express.Router();
 const SellerApplication = require("../models/user/sellerApplications");
 const User = require("../models/user/users");
-const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
-const gmailConfig = require("../utils/config/config.gmail.env");
+const { sendTextEmail } = require("../control/emailhelp");
 require('dotenv').config();
 
 // Helper function to validate Aadhar number format (mock validation)
@@ -49,18 +48,6 @@ const generateUsername = async (orgName) => {
   
   return username;
 };
-
-// Configure nodemailer transporter with Gmail OAuth2
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    type: 'OAuth2',
-    user: gmailConfig.emailId,
-    clientId: gmailConfig.ClientID,
-    clientSecret: gmailConfig.Client_secret,
-    refreshToken: gmailConfig.refresh_token
-  }
-});
 
 // Apply as seller
 router.post("/apply-seller", async (req, res) => {
@@ -211,40 +198,24 @@ router.post("/approve-seller/:id", async (req, res) => {
 
     await newUser.save();
 
-    // Send email with credentials
-    const mailOptions = {
-      from: gmailConfig.emailId,
-      to: application.email,
-      subject: 'Ecoloop Seller Account Approved',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #4CAF50;">Congratulations! Your Seller Application Has Been Approved</h2>
-          <p>Hello ${application.contactPerson},</p>
-          <p>We're pleased to inform you that your seller application for <strong>${application.organizationName}</strong> has been approved.</p>
-          
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">Your Login Credentials:</h3>
-            <p><strong>Username:</strong> ${username}</p>
-            <p><strong>Password:</strong> ${password}</p>
-          </div>
-          
-          <p>You can now log in to your seller dashboard using the credentials above.</p>
-          <p><a href="http://localhost:3000/login" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Go to Login Page</a></p>
-          
-          <p>For security reasons, we recommend changing your password after your first login.</p>
-          
-          <hr style="margin: 30px 0;">
-          <p style="font-size: 14px; color: #666;">
-            Best regards,<br>
-            The Ecoloop Team
-          </p>
-        </div>
-      `
-    };
+    // Send email with credentials (uses shared email helper; skipped if Gmail not configured)
+    const emailBody = `
+Congratulations! Your Seller Application Has Been Approved
 
-    // Send email
-    await transporter.sendMail(mailOptions);
-    console.log(`Seller account credentials sent to: ${application.email}`);
+Hello ${application.contactPerson},
+
+Your seller application for ${application.organizationName} has been approved.
+
+Your Login Credentials:
+Username: ${username}
+Password: ${password}
+
+You can now log in to your seller dashboard. We recommend changing your password after your first login.
+
+Best regards,
+The Ecoloop Team
+    `.trim();
+    await sendTextEmail(application.email, 'Ecoloop Seller Account Approved', emailBody);
 
     res.status(200).json({ 
       message: "Seller application approved successfully! Login credentials have been sent to the seller's email.",

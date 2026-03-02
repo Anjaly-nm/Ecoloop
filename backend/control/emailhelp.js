@@ -1,8 +1,6 @@
 const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
 
-const OAuth2 = google.auth.OAuth2;
-
 // Use environment variables (set in Vercel/host or in .env locally)
 const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID;
 const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET;
@@ -10,23 +8,28 @@ const GMAIL_REDIRECT_URL = process.env.GMAIL_REDIRECT_URL;
 const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
 const GMAIL_EMAIL = process.env.GMAIL_EMAIL;
 
-const oauth2Client = new OAuth2(
-  GMAIL_CLIENT_ID,
-  GMAIL_CLIENT_SECRET,
-  GMAIL_REDIRECT_URL
+const hasGmailConfig = !!(
+  GMAIL_CLIENT_ID &&
+  GMAIL_CLIENT_SECRET &&
+  GMAIL_REFRESH_TOKEN &&
+  GMAIL_EMAIL
 );
-
-oauth2Client.setCredentials({
-  refresh_token: GMAIL_REFRESH_TOKEN,
-});
 
 async function sendTextEmail(to, subject, body) {
   try {
-    // Skip sending if Gmail is not configured (e.g. in production without env vars)
-    if (!GMAIL_CLIENT_ID || !GMAIL_CLIENT_SECRET || !GMAIL_REFRESH_TOKEN || !GMAIL_EMAIL) {
+    // Skip sending if Gmail is not configured — app can host without email
+    if (!hasGmailConfig) {
       console.warn("⚠️ Gmail not configured (missing env vars). Email not sent.");
       return { accepted: [], response: "Gmail not configured" };
     }
+
+    const OAuth2 = google.auth.OAuth2;
+    const oauth2Client = new OAuth2(
+      GMAIL_CLIENT_ID,
+      GMAIL_CLIENT_SECRET,
+      GMAIL_REDIRECT_URL || "https://developers.google.com/oauthplayground"
+    );
+    oauth2Client.setCredentials({ refresh_token: GMAIL_REFRESH_TOKEN });
 
     // ✅ Get fresh access token
     const accessToken = await oauth2Client.getAccessToken();

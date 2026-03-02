@@ -62,8 +62,11 @@ router.post('/login', async (req, res) => {
 
 // ---------------- Firebase Google Login ----------------
 router.post('/google-login', async (req, res) => {
-// ... (The rest of the /google-login route remains unchanged) ...
     const { idToken } = req.body;
+
+    if (!firebaseAuth) {
+        return res.status(503).json({ message: 'Google login is not configured' });
+    }
 
     try {
         // Verify Firebase ID token

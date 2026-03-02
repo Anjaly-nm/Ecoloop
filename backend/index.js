@@ -174,7 +174,8 @@ app.use((req, res) => {
 });
 
 // Start server locally; export app for Vercel
-const port = process.env.PORT || 4321;
+// Use a dedicated BACKEND_PORT env var or default to 4321
+const port = process.env.BACKEND_PORT || 4321;
 
 if (process.env.VERCEL) {
   // In Vercel serverless environment, we just export the app
