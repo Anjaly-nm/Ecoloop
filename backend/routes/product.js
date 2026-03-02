@@ -10,8 +10,19 @@ const { isSeller, authenticateToken } = require("../middlewares/middleware");
 
 const JWT_SECRET = process.env.JWT_SECRET || "secretKey";
 
-const uploadDir = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// Upload directory: use /tmp in serverless (Vercel) and a local uploads folder otherwise
+const isServerless = !!process.env.VERCEL;
+const uploadDir = isServerless
+  ? "/tmp/uploads"
+  : path.join(__dirname, "..", "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  } catch (err) {
+    console.warn("⚠️ Could not create upload directory:", uploadDir, err.message);
+  }
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
