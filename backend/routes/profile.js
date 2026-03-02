@@ -7,8 +7,19 @@ const fs = require("fs"); // Already imported
 const User = require("../models/user/users");
 
 // Ensure uploads folder exists
-const uploadDir = "uploads";
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// In serverless environments like Vercel, use /tmp (writable) instead of the read-only code directory
+const isServerless = !!process.env.VERCEL;
+const uploadDir = isServerless
+  ? "/tmp/uploads"
+  : path.join(__dirname, "..", "..", "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  } catch (err) {
+    console.warn("⚠️ Could not create upload directory:", uploadDir, err.message);
+  }
+}
 
 // Multer setup (Keeping your original config for brevity)
 const storage = multer.diskStorage({
