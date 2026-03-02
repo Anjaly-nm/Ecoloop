@@ -41,3 +41,7 @@ backend/logs/
 # ==========================
 .pnp
 .pnp.js
+
+backend/serviceAccountKey.json
+backend/utils/config/config.gmail.env
+backend/utils/config/config.gmail.env
