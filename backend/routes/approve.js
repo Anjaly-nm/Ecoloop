@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/user/users');
-const CollectorApplications = require('../models/collector/collectorapplications'); 
+// NOTE: Path is case-sensitive in production (Linux); match the actual filename collectorApplications.js
+const CollectorApplications = require('../models/collector/collectorApplications');
 const DeliveryBoyApplication = require('../models/user/deliveryBoyApplications');
 const emailhelp = require('../control/emailhelp');
 
