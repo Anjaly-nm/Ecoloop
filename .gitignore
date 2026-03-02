@@ -42,6 +42,6 @@ backend/logs/
 .pnp
 .pnp.js
 
+# Secrets - never commit these
 backend/serviceAccountKey.json
-backend/utils/config/config.gmail.env
 backend/utils/config/config.gmail.env
