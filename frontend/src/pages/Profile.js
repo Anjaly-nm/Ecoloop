@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Phone, MapPin, Home, Leaf, Mail, Edit2, Map, Save, X, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Phone, MapPin, Home, Leaf, Mail, Edit2, Map, Save, X,
+  CheckCircle, AlertCircle, Camera, ChevronLeft, Calendar,
+  ShieldCheck, User as UserIcon
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Profile = () => {
   const [profile, setProfile] = useState(null);
@@ -9,21 +14,12 @@ const Profile = () => {
   const [formData, setFormData] = useState({});
   const [preview, setPreview] = useState(null);
   const [statusMessage, setStatusMessage] = useState({ type: null, text: null });
-  const [isSaving, setIsSaving] = useState(false); // New state to prevent multiple saves
+  const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
-
-  const primaryAccent = "text-blue-600";
-  const secondaryAccent = "bg-pink-500";
-  const secondaryAccentHover = "hover:bg-pink-600";
-  const cardBg = "bg-white";
-  const inputBg = "bg-blue-50";
-  const textDark = "text-gray-800";
-  const background = "bg-gray-100";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
-      console.log("Authentication token missing. Redirecting to login.");
       navigate("/login");
       return;
     }
@@ -36,8 +32,8 @@ const Profile = () => {
         setProfile(res.data.user);
         setFormData(res.data.user);
       } catch (err) {
-        console.error("❌ Failed to load profile:", err);
-        setStatusMessage({ type: 'error', text: 'Failed to load profile. Please login again.' });
+        console.error("Failed to load profile:", err);
+        setStatusMessage({ type: 'error', text: 'Session expired. Please login again.' });
         localStorage.removeItem("token");
         navigate("/login");
       }
@@ -50,47 +46,33 @@ const Profile = () => {
     if (statusMessage.text) {
       const timer = setTimeout(() => {
         setStatusMessage({ type: null, text: null });
-      }, 5000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [statusMessage]);
 
-  if (!profile)
-    return (
-      <div className={`min-h-screen ${background} flex items-center justify-center`}>
-        <p className="text-center text-xl font-medium text-blue-600 animate-pulse p-10 rounded-xl shadow-lg bg-white">
-          🎨 Loading profile data...
-        </p>
-      </div>
-    );
-
-  // ==========================
-  // HANDLERS
-  // ==========================
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    setFormData({ ...formData, profilePicture: file });
-    if (file) setPreview(URL.createObjectURL(file));
+    if (file) {
+      setFormData({ ...formData, profilePicture: file });
+      setPreview(URL.createObjectURL(file));
+    }
   };
 
   const handleSave = async () => {
-    if (isSaving) return; // Prevent double-click/double-submit
+    if (isSaving) return;
     setIsSaving(true);
 
     try {
       const form = new FormData();
-
       for (let key in formData) {
-        // Logically updated: Only append profilePicture if it's a new File object.
-        // If it's the original string, we skip it so the server doesn't get a file upload request with stale data.
         if (key === "profilePicture" && formData[key] instanceof File) {
           form.append(key, formData[key]);
         } else if (key !== "profilePicture") {
-           // For non-file fields, append the value or an empty string for safety
           form.append(key, formData[key] || "");
         }
       }
@@ -104,182 +86,275 @@ const Profile = () => {
       setProfile(res.data.user);
       setEditMode(false);
       setPreview(null);
-      setStatusMessage({ type: 'success', text: '✅ Profile updated successfully!' });
+      setStatusMessage({ type: 'success', text: 'Profile updated successfully!' });
     } catch (err) {
       console.error("Error updating profile:", err);
-      // Clear the preview on error in case the file upload failed
       setPreview(null);
-      // Revert formData to the original profile state on major error
-      setFormData(profile); 
-      setStatusMessage({ type: 'error', text: '❌ Failed to update profile. Check console for details.' });
+      setFormData(profile);
+      setStatusMessage({ type: 'error', text: 'Failed to update profile.' });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const DetailRow = ({ Icon, label, name, value, editable }) => (
-    <div className="flex items-start text-gray-700">
-      <Icon className={`h-5 w-5 mr-4 ${primaryAccent} flex-shrink-0 mt-1`} />
-      <div className="w-full">
-        <p className="font-semibold text-xs uppercase tracking-wider text-gray-500">{label}</p>
-        {editable ? (
-          <input
-            name={name}
-            value={formData[name] || ""}
-            onChange={handleChange}
-            className={`${inputBg} border border-blue-200 rounded-lg ${textDark} w-full p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150`}
-          />
-        ) : (
-          <p className="text-md font-medium">{value || "N/A"}</p>
-        )}
+  const InputField = ({ label, name, value, icon: Icon, type = "text" }) => (
+    <div className="flex flex-col gap-2">
+      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950/40 ml-1">{label}</label>
+      <div className="relative group">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-950/20 group-focus-within:text-emerald-500 transition-colors">
+          <Icon size={16} />
+        </div>
+        <input
+          type={type}
+          name={name}
+          value={value || ""}
+          onChange={handleChange}
+          className="w-full pl-12 pr-6 py-4 bg-emerald-50/50 border border-emerald-100 rounded-[1.25rem] text-emerald-950 placeholder:text-emerald-950/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white focus:border-emerald-500 transition-all font-medium"
+          placeholder={`Enter ${label.toLowerCase()}...`}
+        />
       </div>
     </div>
   );
 
-  const Notification = ({ type, text }) => {
-    if (!text) return null;
-    const baseClasses = "fixed top-5 left-1/2 transform -translate-x-1/2 p-4 rounded-xl shadow-2xl z-50 flex items-center space-x-3 transition-all duration-300";
-    const successClasses = "bg-green-500 text-white";
-    const errorClasses = "bg-red-500 text-white";
-    const Icon = type === 'success' ? CheckCircle : AlertCircle;
-    return (
-      <div className={`${baseClasses} ${type === 'success' ? successClasses : errorClasses}`}>
-        <Icon className="h-6 w-6"/>
-        <span className="font-semibold">{text}</span>
+  const StaticField = ({ label, value, icon: Icon }) => (
+    <div className="flex items-center gap-5 p-5 bg-white border border-emerald-50 rounded-3xl hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all group">
+      <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+        <Icon size={20} />
       </div>
-    );
-  };
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-950/30 mb-1">{label}</p>
+        <p className="text-sm font-bold text-emerald-950">{value || "Not provided"}</p>
+      </div>
+    </div>
+  );
+
+  if (!profile) return null;
 
   return (
-    <div className={`min-h-screen ${background} p-4 sm:p-8 flex flex-col items-center`}>
-      <Notification type={statusMessage.type} text={statusMessage.text} />
+    <div className="min-h-screen bg-[#F8FAFC] font-sans selection:bg-emerald-100 selection:text-emerald-900">
+      {/* Notification Toast */}
+      <AnimatePresence>
+        {statusMessage.text && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            className={`fixed top-8 left-1/2 z-[200] px-6 py-4 rounded-[1.5rem] shadow-2xl flex items-center gap-3 backdrop-blur-xl border ${statusMessage.type === 'success'
+              ? 'bg-emerald-500 text-white border-emerald-400'
+              : 'bg-rose-500 text-white border-rose-400'
+              }`}
+          >
+            {statusMessage.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+            <span className="text-sm font-black uppercase tracking-widest">{statusMessage.text}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="w-full max-w-4xl flex justify-between items-center mb-10 pt-4">
-        <h2 className={`text-4xl font-black ${textDark} tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-pink-600`}>
-          MY PROFILE
-        </h2>
+      {/* Navigation Header */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-50 shadow-sm">
+        <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 group text-emerald-950"
+          >
+            <div className="p-2 bg-emerald-50 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-all">
+              <ChevronLeft size={18} />
+            </div>
+            <span className="text-xs font-black uppercase tracking-widest">Dashboard</span>
+          </button>
 
-        <div className="flex space-x-3">
-          {editMode ? (
-            <>
-              <button
-                onClick={handleSave}
-                disabled={isSaving} // Disable button while saving
-                className={`flex items-center space-x-2 px-4 py-2 bg-green-500 text-sm font-semibold text-white rounded-xl hover:bg-green-600 transition duration-200 shadow-lg shadow-green-500/30 disabled:bg-green-300`}
-              >
-                <Save className={`h-4 w-4 ${isSaving ? 'animate-spin' : ''}`} />
-                <span>{isSaving ? 'Saving...' : 'Save'}</span>
-              </button>
-              <button
-                onClick={() => { setEditMode(false); setPreview(null); setFormData(profile); }}
-                className="flex items-center space-x-2 px-4 py-2 bg-gray-400 text-sm font-semibold text-white rounded-xl hover:bg-gray-500 transition duration-200 shadow-md"
-              >
-                <X className="h-4 w-4" />
-                <span>Cancel</span>
-              </button>
-            </>
-          ) : (
-            <>
+          <div className="flex gap-3">
+            {editMode ? (
+              <>
+                <button
+                  onClick={() => { setEditMode(false); setPreview(null); setFormData(profile); }}
+                  className="px-6 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-100 transition-all font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-8 py-2.5 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Save size={14} className={isSaving ? 'animate-spin' : ''} />
+                  {isSaving ? 'Saving' : 'Save Changes'}
+                </button>
+              </>
+            ) : (
               <button
                 onClick={() => setEditMode(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-sm font-semibold text-white rounded-xl hover:bg-blue-600 transition duration-200 shadow-lg shadow-blue-300/50"
+                className="px-8 py-2.5 bg-emerald-950 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-900 transition-all active:scale-95 flex items-center gap-2"
               >
-                <Edit2 className="h-4 w-4" />
-                <span>Edit</span>
+                <Edit2 size={12} />
+                Edit Account
               </button>
-              <button
-                onClick={() => navigate("/dashboard")}
-                className={`px-4 py-2 ${secondaryAccent} text-white text-sm font-bold rounded-xl shadow-xl shadow-pink-300/70 hover:scale-[1.03] transition duration-200`}
-              >
-                Dashboard
-              </button>
-            </>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className={`w-full max-w-4xl ${cardBg} border border-gray-200 rounded-3xl shadow-2xl shadow-gray-300/50 overflow-hidden`}>
-        <div className="p-8 border-b border-gray-200 flex flex-col md:flex-row items-center gap-8">
-          <div className="relative flex-shrink-0">
-            <img
-              src={
-                preview ||
-                (profile.profilePicture
-                  ? profile.profilePicture.startsWith("http")
-                    ? profile.profilePicture
-                    : `${process.env.REACT_APP_API_URL}/${profile.profilePicture}`
-                  : profile.photo) ||
-                "https://via.placeholder.com/150/f3f4f6/3b82f6?text=U"
-              }
-              alt="Profile"
-              className="w-32 h-32 rounded-full object-cover border-4 border-blue-500 shadow-xl shadow-blue-200 transform hover:scale-[1.05] transition duration-300"
-            />
-            {editMode && (
-              <label className={`absolute bottom-0 right-0 ${secondaryAccent} text-white p-2 rounded-full cursor-pointer ${secondaryAccentHover} transition duration-150 border-2 border-white`}>
-                <Edit2 size={16} />
-                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-              </label>
-            )}
-          </div>
+      <main className="max-w-6xl mx-auto px-6 pt-32 pb-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+        >
+          {/* Left Sidebar: Profile Identity */}
+          <div className="lg:col-span-4 flex flex-col gap-5">
+            <div className="bg-white p-6 rounded-[2rem] border border-emerald-50 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 inset-x-0 h-20 bg-emerald-50/50 -z-0" />
 
-          <div className="text-center md:text-left">
-            {editMode ? (
-              <input
-                name="name"
-                value={formData.name || ""}
-                onChange={handleChange}
-                className={`${inputBg} border border-blue-300 rounded-lg ${textDark} text-3xl p-2 w-full font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150`}
-              />
-            ) : (
-              <h3 className={`text-5xl font-extrabold ${textDark} tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-pink-600`}>
-                {profile.name}
-              </h3>
-            )}
-            <p className={`text-lg font-medium ${primaryAccent} mt-1`}>
-              <Mail className="inline h-5 w-5 mr-2" />
-              {profile.email || "N/A"}
-            </p>
-            <p className="text-xs text-gray-500 mt-2 italic">
-              Member since:{" "}
-              {new Date(profile.createdAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          </div>
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="relative mb-4 mt-2">
+                  <div className="w-24 h-24 rounded-full border-4 border-white shadow-xl shadow-emerald-500/10 overflow-hidden bg-emerald-100">
+                    <img
+                      src={preview || (profile.profilePicture ?
+                        profile.profilePicture.startsWith("http") ? profile.profilePicture : `${process.env.REACT_APP_API_URL}/${profile.profilePicture}`
+                        : profile.photo) || "https://ui-avatars.com/api/?name=" + profile.name + "&background=10b981&color=fff"}
+                      alt="Identity"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  </div>
+                  {editMode && (
+                    <label className="absolute bottom-1 right-1 w-8 h-8 bg-emerald-600 text-white rounded-full border-4 border-white flex items-center justify-center cursor-pointer hover:bg-emerald-700 transition-colors shadow-lg">
+                      <Camera size={12} />
+                      <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                    </label>
+                  )}
+                </div>
 
-          <div className="md:ml-auto flex flex-col items-center">
-            <div className="bg-green-100 border border-green-400 p-5 rounded-2xl text-center shadow-lg shadow-green-200 transform hover:scale-105 transition duration-300">
-              <Leaf className={`h-9 w-9 mx-auto mb-2 text-green-600 animate-bounce`} /> 
-              <p className="text-sm font-bold uppercase tracking-wider text-gray-600">EcoPoints</p>
-              <p className="text-4xl font-black text-green-700 tracking-widest mt-1">
-                {profile.ecoPoints || 0}
-              </p>
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-black text-emerald-950 tracking-tight uppercase mb-1.5">{profile.name}</h3>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full">
+                    <Mail size={10} className="text-emerald-600" />
+                    <span className="text-[8px] font-black uppercase text-emerald-600 tracking-wider font-bold">
+                      {profile.email}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full pt-5 border-t border-emerald-50 flex items-center justify-between px-1">
+                  <div className="text-center">
+                    <p className="text-[8px] font-black text-emerald-950/30 uppercase tracking-[0.2em] mb-0.5">Impact Rank</p>
+                    <p className="text-sm font-black text-emerald-950">#142</p>
+                  </div>
+                  <div className="w-px h-6 bg-emerald-50" />
+                  <div className="text-center">
+                    <p className="text-[8px] font-black text-emerald-950/30 uppercase tracking-[0.2em] mb-0.5">Status</p>
+                    <div className="flex items-center gap-1">
+                      <ShieldCheck size={12} className="text-emerald-500" />
+                      <p className="text-[10px] font-bold text-emerald-950">Verified</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* EcoPoints Premium Card */}
+            <div className="bg-emerald-950 p-5 rounded-[1.75rem] text-white shadow-2xl shadow-emerald-950/20 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Leaf size={70} />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-400/20 flex items-center justify-center text-emerald-400">
+                    <Leaf size={12} />
+                  </div>
+                  <p className="text-[8px] font-black uppercase tracking-[0.2em] text-emerald-400">Environmental Credit</p>
+                </div>
+                <h4 className="text-3xl font-black tracking-tighter mb-0.5">{profile.ecoPoints || 0}</h4>
+                <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-5">Points Balance</p>
+                <button
+                  onClick={() => navigate('/market-shop')}
+                  className="w-full py-2.5 bg-emerald-500 text-emerald-950 rounded-lg font-black text-[8px] uppercase tracking-widest hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/10"
+                >
+                  Visit Marketplace
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid md:grid-cols-2 gap-x-12 gap-y-8 p-8">
-          <div className="space-y-6">
-            <h4 className={`text-xl font-bold ${textDark} border-b-2 border-blue-500/50 pb-2 mb-3 tracking-wide uppercase`}>
-              Contact & Location
-            </h4>
-            <DetailRow Icon={Phone} label="Phone Number" name="phone" value={profile.phone} editable={editMode} />
-            <DetailRow Icon={Mail} label="Email Address (Non-Editable)" name="email" value={profile.email} editable={false} />
-            <DetailRow Icon={MapPin} label="City / Town" name="place" value={profile.place} editable={editMode} />
-          </div>
+          {/* Right Section: Detailed Information */}
+          <div className="lg:col-span-8 flex flex-col gap-6">
+            <div className="bg-white p-8 md:p-12 rounded-[2.5rem] border border-emerald-50 shadow-sm">
+              {editMode ? (
+                <div className="space-y-12">
+                  <section>
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                      <h2 className="text-sm font-black text-emerald-950 tracking-[0.2em] uppercase">Security & Personal</h2>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <InputField label="Identity Name" name="name" value={formData.name} icon={UserIcon} />
+                      <InputField label="Contact Phone" name="phone" value={formData.phone} icon={Phone} />
+                      <InputField label="Assigned Place" name="place" value={formData.place} icon={MapPin} />
+                      <div className="flex flex-col gap-2 opacity-60">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950/40 ml-1">Legacy Email (Read-Only)</label>
+                        <div className="pl-12 pr-6 py-4 bg-emerald-50/20 border border-emerald-50 rounded-[1.25rem] text-emerald-950/50 font-medium flex items-center relative">
+                          <Mail size={16} className="absolute left-4 opacity-50" />
+                          {profile.email}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
 
-          <div className="space-y-6">
-            <h4 className={`text-xl font-bold ${textDark} border-b-2 border-pink-500/50 pb-2 mb-3 tracking-wide uppercase`}>
-              Detailed Address
-            </h4>
-            <DetailRow Icon={Map} label="Ward / Zone Number" name="wardNumber" value={profile.wardNumber} editable={editMode} />
-            <DetailRow Icon={Home} label="House / Building Number" name="houseNumber" value={profile.houseNumber} editable={editMode} />
-            <DetailRow Icon={Home} label="Street / Area Address" name="address" value={profile.address} editable={editMode} />
+                  <section>
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                      <h2 className="text-sm font-black text-emerald-950 tracking-[0.2em] uppercase">Location Assets</h2>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <InputField label="Ward/Zone" name="wardNumber" value={formData.wardNumber} icon={Map} />
+                      <InputField label="Unit No" name="houseNumber" value={formData.houseNumber} icon={Home} />
+                      <div className="md:col-span-1">
+                        <InputField label="Street Detail" name="address" value={formData.address} icon={MapPin} />
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              ) : (
+                <div className="space-y-12">
+                  <section>
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                      <h2 className="text-sm font-black text-emerald-950 tracking-[0.2em] uppercase">Account Overview</h2>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <StaticField label="Mobile Connectivity" value={profile.phone} icon={Phone} />
+                      <StaticField label="Primary Location" value={profile.place} icon={MapPin} />
+                    </div>
+                  </section>
+
+                  <section>
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                      <h2 className="text-sm font-black text-emerald-950 tracking-[0.2em] uppercase">Residency Details</h2>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <StaticField label="Ward Number" value={profile.wardNumber} icon={Map} />
+                      <StaticField label="Unit Reference" value={profile.houseNumber} icon={Home} />
+                      <StaticField label="Detailed Address" value={profile.address} icon={MapPin} />
+                    </div>
+                  </section>
+
+                  <div className="p-8 bg-emerald-50/30 rounded-[2rem] border border-emerald-50 flex items-center gap-6">
+                    <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
+                      <Calendar size={24} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-emerald-950/30 tracking-[0.2em] mb-1">Onboarding Metric</p>
+                      <p className="text-base font-bold text-emerald-950">
+                        Official Member since {new Date(profile.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </main>
     </div>
   );
 };

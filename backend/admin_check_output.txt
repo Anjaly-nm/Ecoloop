@@ -1,0 +1,8 @@
+STARTING CHECK
+(node:22376) [MONGOOSE] DeprecationWarning: Mongoose: the `strictQuery` option will be switched back to `false` by default in Mongoose 7. Use `mongoose.set('strictQuery', false);` if you want to prepare for this change. Or use `mongoose.set('strictQuery', true);` to suppress this warning.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Connected to MongoDB. Querying users...
+Found 1 admins.
+ADMIN FOUND: Name: admind, Email: admind@gmail.com, Role: Admin, ID: 68cd6e5526945c77c8f1a2a5
+Disconnecting...
+ENDING CHECK

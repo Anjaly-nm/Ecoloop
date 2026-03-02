@@ -21,6 +21,42 @@ router.get('/all', isAdmin, async (req, res) => {
     }
 });
 
+// -----------------------------------------------------------------
+// 3. GET /api/user/sellers → Get all sellers (Requires Admin)
+// -----------------------------------------------------------------
+router.get('/sellers', isAdmin, async (req, res) => {
+    try {
+        // Fetch all users with role 'seller', excluding sensitive fields
+        const sellers = await User.find({ role: 'seller' }).select('-password -__v');
+
+        res.status(200).json(sellers);
+    } catch (error) {
+        console.error('Error fetching sellers:', error);
+        res.status(500).json({ 
+            message: 'Server error while fetching sellers', 
+            detail: error.message 
+        });
+    }
+});
+
+// -----------------------------------------------------------------
+// 4. GET /api/user/delivery-boys → Get all delivery boys (Requires Admin)
+// -----------------------------------------------------------------
+router.get('/delivery-boys', isAdmin, async (req, res) => {
+    try {
+        // Fetch all users with role 'delivery-boy', excluding sensitive fields
+        const deliveryBoys = await User.find({ role: 'delivery-boy' }).select('-password -__v');
+
+        res.status(200).json(deliveryBoys);
+    } catch (error) {
+        console.error('Error fetching delivery boys:', error);
+        res.status(500).json({ 
+            message: 'Server error while fetching delivery boys', 
+            detail: error.message 
+        });
+    }
+});
+
 
 // -----------------------------------------------------------------
 // 2. DELETE /api/user/:id → Delete a user by ID (Requires Admin)

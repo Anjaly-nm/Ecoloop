@@ -1,16 +1,22 @@
 import React, { useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/login.css";
 import { auth, provider } from "../firebase";
 import { signInWithPopup, setPersistence, browserLocalPersistence } from "firebase/auth";
 
 const Login = () => {
   // Use a more generic name for clarity, e.g., loginIdentifier
-  const [loginIdentifier, setLoginIdentifier] = useState(""); 
+  const [loginIdentifier, setLoginIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const redirectPath = queryParams.get("redirect");
 
   // 🔹 Email/Password/Username Login
   const handleLogin = async (e) => {
@@ -21,23 +27,32 @@ const Login = () => {
       // ⚡️ CRITICAL FIX: Sending loginIdentifier as 'loginId' ⚡️
       const response = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/user/login`,
-        { 
+        {
           loginId: loginIdentifier, // <-- Mapped to loginId to match the backend
-          password 
-        } 
+          password
+        }
       );
 
       if (response.data && response.data.token) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
+        if (redirectPath) {
+          navigate(redirectPath);
+          return;
+        }
+
         const role = response.data.user?.role?.toLowerCase();
         if (role === "admin") {
           navigate("/Adminpage");
         } else if (role === "collector") {
-          navigate("/collector"); 
+          navigate("/collector");
+        } else if (role === "seller") {
+          navigate("/seller-dashboard");
+        } else if (role === "delivery-boy") {
+          navigate("/delivery-dashboard");
         } else {
-          navigate("/Dashboard"); 
+          navigate("/Dashboard");
         }
       } else {
         setErrorMsg("Login failed: Invalid response from server");
@@ -51,7 +66,6 @@ const Login = () => {
 
   // 🔹 Google Login (No changes needed here)
   const handleGoogleLogin = async () => {
-    // ... (rest of the handleGoogleLogin function remains the same)
     try {
       setErrorMsg("");
       await setPersistence(auth, browserLocalPersistence);
@@ -64,11 +78,21 @@ const Login = () => {
       );
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      if (redirectPath) {
+        navigate(redirectPath);
+        return;
+      }
+
       const role = response.data.user?.role?.toLowerCase();
       if (role === "admin") {
         navigate("/Adminpage");
       } else if (role === "collector") {
         navigate("/collector");
+      } else if (role === "seller") {
+        navigate("/seller-dashboard");
+      } else if (role === "delivery-boy") {
+        navigate("/delivery-dashboard");
       } else {
         navigate("/Dashboard");
       }
@@ -95,20 +119,28 @@ const Login = () => {
         <form onSubmit={handleLogin}>
           <label>Username or Email</label>
           <input
-            type="text" 
+            type="text"
             value={loginIdentifier}
             onChange={(e) => setLoginIdentifier(e.target.value)} // <-- Updated setter
             required
             placeholder="username or you@gmail.com"
           />
           <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="••••••••"
-          />
+          <div className="password-input-container">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="••••••••"
+            />
+            <span
+              className="password-toggle-icon"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
+          </div>
           {errorMsg && <p className="error">{errorMsg}</p>}
           <button type="submit">Login</button>
         </form>

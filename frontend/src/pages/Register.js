@@ -19,7 +19,7 @@ const Registration = () => {
         address: '',
         // role, collectorId, houseNumber, and ward removed from state 
         // as they are no longer user-selectable or needed for other roles.
-        houseNumber: '', 
+        houseNumber: '',
         ward: '' // Sent as 'wardNumber' to the backend
     });
     const [errorMsg, setErrorMsg] = useState('');
@@ -63,19 +63,19 @@ const Registration = () => {
             alert('Password must be 6 to 8 characters long.');
             return;
         }
-        
+
         // Conditional validation for 'collectorId' is removed, but the 'user' specific fields 
         // (houseNumber, ward) are still validated above as they are now always required.
         // --- END VALIDATION ---
 
         // 2. Prepare FormData for submission
         const data = new FormData();
-        
+
         // Append all text fields
         for (const key in formData) {
             // Rename 'ward' to 'wardNumber' for the backend
             if (key === 'ward') {
-                data.append('wardNumber', formData[key]); 
+                data.append('wardNumber', formData[key]);
             } else {
                 data.append(key, formData[key]);
             }
@@ -93,7 +93,7 @@ const Registration = () => {
         try {
             const res = await fetch(API_URL, {
                 method: 'POST',
-                body: data, 
+                body: data,
             });
 
             const responseData = await res.json();
@@ -129,15 +129,15 @@ const Registration = () => {
                     <div className="form-group">
                         <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
                     </div>
-                    
+
                     <div className="form-group">
-                        <input 
-                            type="text" 
-                            name="username" 
-                            placeholder="Username" 
-                            value={formData.username} 
-                            onChange={handleChange} 
-                            required 
+                        <input
+                            type="text"
+                            name="username"
+                            placeholder="Username"
+                            value={formData.username}
+                            onChange={handleChange}
+                            required
                         />
                     </div>
 
@@ -162,7 +162,7 @@ const Registration = () => {
                     <div className="form-group">
                         <input type="text" name="address" placeholder="Address" value={formData.address} onChange={handleChange} required />
                     </div>
-                    
+
                     {/* 🔑 REMOVED: Role selection dropdown */}
 
                     {/* 🔑 The 'user' specific fields are now always required for this registration form */}

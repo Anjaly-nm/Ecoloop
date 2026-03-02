@@ -1,0 +1,126 @@
+Generated Test Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NDEzMDYzODI4ZjliOTE2ZjA1NjdmNyIsInJvbGUiOiJzZWxsZXIiLCJpYXQiOjE3Njk3NDY0OTMsImV4cCI6MTc2OTc1MDA5M30.AR2fsyFCm6v8ivVFQzr5JiBxDVEidjlu9A7FE-xHOZY
+Testing GET http://localhost:4321/api/orders/seller...
+Response Status: 200
+Response Data: {
+  "success": true,
+  "orders": [
+    {
+      "shippingAddress": {
+        "phone": "9778760387",
+        "address": "Dhikambar bhavan po shiva puram",
+        "city": "Kottayam",
+        "state": "Kerala",
+        "pincode": "686509"
+      },
+      "deliveryStatus": "pending",
+      "_id": "69709c556cdc8a379c0e5b80",
+      "userId": {
+        "_id": "697091bf6cdc8a379c0e5b53",
+        "name": "kanika",
+        "email": "kani@gmail.com",
+        "phone": "+919778760387"
+      },
+      "items": [
+        {
+          "productId": {
+            "_id": "6944ccb0a266120b0de708ac",
+            "name": "notebook",
+            "image": "/uploads/1766116552839-pap.png",
+            "seller_id": "69413063828f9b916f0567f7"
+          },
+          "name": "notebook",
+          "price": 120,
+          "quantity": 1,
+          "image": "/uploads/1766116552839-pap.png",
+          "_id": "69709c556cdc8a379c0e5b81"
+        }
+      ],
+      "totalAmount": 170,
+      "paymentMethod": "online",
+      "status": "confirmed",
+      "createdAt": "2026-01-21T09:28:53.431Z",
+      "updatedAt": "2026-01-21T09:28:53.439Z",
+      "__v": 0
+    },
+    {
+      "shippingAddress": {
+        "phone": "9778760387",
+        "address": "Dhikambar bhavan po shiva puram",
+        "city": "Kottayam",
+        "state": "Kerala",
+        "pincode": "686509"
+      },
+      "deliveryStatus": "pending",
+      "_id": "69708b606cdc8a379c0e5b4d",
+      "userId": {
+        "_id": "693ba512512df0083b175c7c",
+        "name": "Dhikambar",
+        "email": "dhikambaran@gmail.com",
+        "phone": "8606878986"
+      },
+      "items": [
+        {
+          "productId": {
+            "_id": "69462d87e53a72602844beab",
+            "name": "containers",
+            "image": "/uploads/1766206870954-pla.png",
+            "seller_id": "69413063828f9b916f0567f7"
+          },
+          "name": "containers",
+          "price": 150,
+          "quantity": 2,
+          "image": "/uploads/1766206870954-pla.png",
+          "_id": "69708b606cdc8a379c0e5b4e"
+        }
+      ],
+      "totalAmount": 350,
+      "paymentMethod": "online",
+      "status": "assigned",
+      "createdAt": "2026-01-21T08:16:32.956Z",
+      "updatedAt": "2026-01-21T08:16:32.964Z",
+      "__v": 0,
+      "assignedAt": "2026-01-29T04:41:56.907Z",
+      "deliveryBoyId": "697060624566310eefb5f2b1"
+    },
+    {
+      "shippingAddress": {
+        "phone": "9778760387",
+        "address": "Dhikambar bhavan po shiva puram",
+        "city": "Kottayam",
+        "state": "Kerala",
+        "pincode": "686509"
+      },
+      "deliveryStatus": "pending",
+      "_id": "695de897baff73fddaafcbe0",
+      "userId": {
+        "_id": "6943d944b137789356c743cb",
+        "name": "kamala",
+        "email": "kamala@gmail.com",
+        "phone": "+918606878986"
+      },
+      "items": [
+        {
+          "productId": {
+            "_id": "69462d87e53a72602844beab",
+            "name": "containers",
+            "image": "/uploads/1766206870954-pla.png",
+            "seller_id": "69413063828f9b916f0567f7"
+          },
+          "name": "containers",
+          "price": 150,
+          "quantity": 1,
+          "image": "/uploads/1766206870954-pla.png",
+          "_id": "695de897baff73fddaafcbe1"
+        }
+      ],
+      "totalAmount": 200,
+      "paymentMethod": "cod",
+      "status": "confirmed",
+      "createdAt": "2026-01-07T05:01:11.146Z",
+      "updatedAt": "2026-01-07T05:01:11.149Z",
+      "__v": 0
+    }
+  ]
+}
+
+SUCCESS: Received 3 orders.

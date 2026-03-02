@@ -1,0 +1,15 @@
+Connected to DB
+Found 1 unique sellers in Products collection.
+
+--------------------------------------------------
+Seller:  nithya (ID: 69413063828f9b916f0567f7) - jeevaroyes@gmail.com
+Products owned: 3
+Orders found for this seller's products: 3
+Sample Order IDs: [
+  new ObjectId("695de897baff73fddaafcbe0"),
+  new ObjectId("69708b606cdc8a379c0e5b4d"),
+  new ObjectId("69709c556cdc8a379c0e5b80")
+]
+Sample Order 695de897baff73fddaafcbe0 has 1 items from this seller.
+
+Products with NO seller_id: 0

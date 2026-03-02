@@ -7,12 +7,14 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: false }, // Make password optional for Google login
     phone: { type: String, required: true },
     address: { type: String, required: true },
-    role: { type: String, enum: ['user', 'Admin', 'collector'], default: 'user' },
+    role: { type: String, enum: ['user', 'Admin', 'collector', 'seller', 'delivery-boy'], default: 'user' }, // ✅ Added 'seller' and 'delivery-boy' roles
     houseNumber: { type: String }, // optional
-    wardNumber: { type: String },    // optional
+    wardNumber: { type: String },    // optional
     profilePicture: { type: String }, // new field for uploaded image
     ecoPoints: { type: Number, default: 0 }, // new field
-    firebaseUid: { type: String } // Firebase UID for Google login users
+    firebaseUid: { type: String }, // Firebase UID for Google login users
+    baseSalary: { type: Number, default: 20000 }, // Default base salary for delivery boys
+    perDeliveryIncentive: { type: Number, default: 50 } // Default incentive per delivery
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

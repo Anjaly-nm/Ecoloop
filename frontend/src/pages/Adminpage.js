@@ -10,7 +10,8 @@ import {
   FaUsers, 
   FaLeaf,
   FaSeedling,
-  FaBookOpen // New icon imported
+  FaBookOpen,
+  FaClipboardList // New icon for applications
 } from "react-icons/fa";
 // NOTE: Replaced external CSS with Tailwind CSS utility classes
 
@@ -78,7 +79,9 @@ const AdminPage = () => {
             />
             <SidebarItem icon={FaStore} label="profile" path="/admin/Profile" />
             <SidebarItem icon={FaStore} label="Sellers & Shop" path="/admin/shop-management" />
-            <SidebarItem icon={FaChartLine} label="System Reports" path="/admin/reports" />
+            <SidebarItem icon={FaClipboardList} label="Applications" path="/admin/applications" /> {/* New Applications link */}
+            <SidebarItem icon={FaClipboardList} label="Leave Applications" path="/admin/leave-applications" /> {/* Leave Applications link */}
+            <SidebarItem icon={FaChartLine} label="System Reports" path="/admin/SystemReports" />
           </ul>
         </nav>
         
@@ -148,7 +151,7 @@ const AdminPage = () => {
           <DashboardCard
             icon={FaChartLine}
             title="System Reports"
-            path="/admin/reports"
+            path="/admin/SystemReports"
             iconColor="text-red-600"
           />
 

@@ -17,9 +17,9 @@ const Illustration = () => (
     <div className="w-40 h-40 bg-teal-100 rounded-full flex items-center justify-center">
       <span className="text-5xl">📄🚛</span> {/* Emoji placeholder */}
     </div>
-    
+
     <div className="space-y-4 w-full">
-      
+
       {/* 1. Application Process Details */}
       <div className="pt-4 space-y-2">
         <h4 className="text-sm font-bold text-gray-700">APPLICATION PROCESS</h4>
@@ -39,8 +39,8 @@ const Illustration = () => (
 
 const CollectorApplicationForm = () => {
   // 2. INITIALIZE useNavigate
-  const navigate = useNavigate(); 
-  
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -61,46 +61,52 @@ const CollectorApplicationForm = () => {
       );
       // NOTE: Using window.alert/console.error is permissible for success/error feedback 
       // within the submission context, but the 'Home' navigation needs the hook.
-      alert(res.data.message); 
+      alert(res.data.message);
       setFormData({ name: "", email: "", phone: "", address: "" });
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.message || "Error submitting application");
     }
   };
-  
+
   // 3. UPDATED navigation function
   const handleHomeClick = () => {
-      navigate('/');
+    navigate('/');
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-10 flex flex-col items-center">
-      
+
       {/* Top Header / Branding Section (GREEN/TEAL) */}
       <div className="absolute top-0 w-full h-40 bg-gradient-to-r from-teal-600 to-green-600 shadow-lg">
         <div className="max-w-6xl mx-auto p-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-white tracking-wider">
             ECO COLLECTOR REGISTRATION
           </h1>
-          
+
           {/* Menu and Home Button - NOW ONLY HOME BUTTON REMAINS */}
           <nav className="flex items-center space-x-6 text-white text-sm">
             {/* REQUIRED HOME BUTTON with navigate() call */}
-            <button 
-                onClick={handleHomeClick}
-                className="px-4 py-2 bg-white text-teal-600 font-semibold rounded-lg shadow-md hover:bg-gray-100 transition"
+            <button
+              onClick={() => navigate('/application-options')}
+              className="px-4 py-2 bg-white/20 text-white font-semibold rounded-lg hover:bg-white/30 transition mr-2"
             >
-                🏡 Home
+              ← Back
+            </button>
+            <button
+              onClick={handleHomeClick}
+              className="px-4 py-2 bg-white text-teal-600 font-semibold rounded-lg shadow-md hover:bg-gray-100 transition"
+            >
+              🏡 Home
             </button>
           </nav>
         </div>
       </div>
-      
+
       {/* Main Card Container (The central white box) */}
       <div className="relative z-10 w-full max-w-4xl mt-24 bg-white rounded-xl shadow-2xl p-6 md:p-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
+
           {/* Left Side: Form Section */}
           <div className="md:border-r md:pr-8">
             <h2 className="text-2xl font-bold text-gray-800">
@@ -111,7 +117,7 @@ const CollectorApplicationForm = () => {
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              
+
               {/* Input: Full Name */}
               <input
                 type="text"
@@ -122,7 +128,7 @@ const CollectorApplicationForm = () => {
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150"
                 required
               />
-              
+
               {/* Input: Email */}
               <input
                 type="email"
@@ -168,12 +174,12 @@ const CollectorApplicationForm = () => {
 
           {/* Right Side: Illustration & Info */}
           <div className="relative flex flex-col justify-between">
-            
+
             {/* The Illustration component now holds the area-specific details */}
             <Illustration />
 
             <p className="text-xs text-gray-400 mt-6 md:mt-0">
-                All applications are subject to mandatory background checks and regional approval.
+              All applications are subject to mandatory background checks and regional approval.
             </p>
           </div>
         </div>

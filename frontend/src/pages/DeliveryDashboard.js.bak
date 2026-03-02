@@ -1,0 +1,1331 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaTruck, FaMapMarkerAlt, FaClock, FaWeight, FaPhone, FaUser, FaSignOutAlt, FaBars, FaTimes, FaBox, FaCheckCircle, FaRoad, FaRoute, FaCalendarAlt, FaCalendarCheck, FaLeaf, FaRecycle, FaTree, FaShoppingCart, FaChartLine } from 'react-icons/fa';
+
+const DeliveryDashboard = () => {
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [deliveries, setDeliveries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
+  const [leaveForm, setLeaveForm] = useState({
+    startDate: '',
+    endDate: '',
+    leaveType: 'Personal',
+    reason: ''
+  });
+  const [leaveErrors, setLeaveErrors] = useState({});
+  const [showProfileView, setShowProfileView] = useState(false);
+  const [showWeeklyAvailabilityModal, setShowWeeklyAvailabilityModal] = useState(false);
+  const [showLeaveStatusModal, setShowLeaveStatusModal] = useState(false);
+  const [weeklyAvailability, setWeeklyAvailability] = useState({
+    monday: { morning: false, afternoon: false, evening: false },
+    tuesday: { morning: false, afternoon: false, evening: false },
+    wednesday: { morning: false, afternoon: false, evening: false },
+    thursday: { morning: false, afternoon: false, evening: false },
+    friday: { morning: false, afternoon: false, evening: false },
+    saturday: { morning: false, afternoon: false, evening: false },
+    sunday: { morning: false, afternoon: false, evening: false }
+  });
+  const [leaveApplications, setLeaveApplications] = useState([]);
+
+  // Fetch deliveries from API - replace with actual API endpoint
+  const fetchDeliveries = async () => {
+    try {
+      setLoading(true);
+      // Replace with your actual API endpoint
+      // const response = await fetch('http://localhost:4321/api/deliveries', {
+      //   headers: {
+      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
+      //   }
+      // });
+      // const data = await response.json();
+      // setDeliveries(data.deliveries || []);
+      
+      // For now, simulate empty data to show loading state
+      setDeliveries([]);
+    } catch (error) {
+      console.error('Error fetching deliveries:', error);
+      setDeliveries([]); // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch user data from localStorage
+    const userData = JSON.parse(localStorage.getItem('user'));
+    
+    // Reset availability status to true (online) on login
+    // This ensures delivery boys start as available when they log in
+    const updatedUserData = {
+      ...userData,
+      isAvailable: true
+    };
+    
+    setUser(updatedUserData);
+    
+    // Update localStorage to reflect the reset status
+    localStorage.setItem('user', JSON.stringify(updatedUserData));
+    localStorage.setItem('deliveryBoyAvailability', JSON.stringify(true));
+    
+    // Load saved availability when component mounts
+    const savedAvailability = localStorage.getItem('weeklyDeliveryAvailability');
+    if (savedAvailability) {
+      setWeeklyAvailability(JSON.parse(savedAvailability));
+    }
+    
+    // Fetch deliveries from API
+    fetchDeliveries();
+    
+    // Fetch leave applications for this delivery person
+    fetchLeaveApplications();
+  }, []);
+
+  // Function to fetch leave applications for the current delivery person
+  const fetchLeaveApplications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      // Fetch leave applications for this specific user
+      const response = await fetch(`http://localhost:4321/api/leave-applications/user/${user.id || user._id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLeaveApplications(data.applications || []);
+      } else {
+        console.error('Failed to fetch leave applications');
+        setLeaveApplications([]);
+      }
+    } catch (error) {
+      console.error('Error fetching leave applications:', error);
+      setLeaveApplications([]);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('deliveryBoyAvailability');
+    navigate('/login');
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-amber-100 text-amber-800 border border-amber-300';
+      case 'in-transit':
+        return 'bg-blue-100 text-blue-800 border border-blue-300';
+      case 'completed':
+        return 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border border-red-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border border-gray-300';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-amber-100 text-amber-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const updateDeliveryStatus = async (deliveryId, newStatus) => {
+    try {
+      // Call API to update delivery status
+      // const response = await fetch(`http://localhost:4321/api/deliveries/${deliveryId}/status`, {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
+      //   },
+      //   body: JSON.stringify({ status: newStatus })
+      // });
+      
+      // if (response.ok) {
+        // Update local state on success
+        setDeliveries(deliveries.map(delivery => 
+          delivery.id === deliveryId ? { ...delivery, status: newStatus } : delivery
+        ));
+      // }
+    } catch (error) {
+      console.error('Error updating delivery status:', error);
+      // Handle error appropriately
+    }
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const toggleProfileView = () => {
+    setShowProfileView(!showProfileView);
+  };
+
+  const toggleWeeklyAvailabilityModal = () => {
+    setShowWeeklyAvailabilityModal(!showWeeklyAvailabilityModal);
+  };
+  
+  const toggleTimeSlot = (day, timeSlot) => {
+    setWeeklyAvailability(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [timeSlot]: !prev[day][timeSlot]
+      }
+    }));
+  };
+  
+  const saveWeeklyAvailability = () => {
+    // Save to localStorage
+    localStorage.setItem('weeklyDeliveryAvailability', JSON.stringify(weeklyAvailability));
+    
+    // In a real app, you would also save to the backend
+    // const response = await fetch('http://localhost:4321/api/delivery-boy/weekly-availability', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     'Authorization': `Bearer ${localStorage.getItem('token')}`
+    //   },
+    //   body: JSON.stringify(weeklyAvailability)
+    // });
+    
+    // Close the modal after saving
+    setShowWeeklyAvailabilityModal(false);
+  };
+  
+  const handleLeaveChange = (e) => {
+    const { name, value } = e.target;
+    setLeaveForm({
+      ...leaveForm,
+      [name]: value
+    });
+    
+    // Clear error when user starts typing
+    if (leaveErrors[name]) {
+      setLeaveErrors({
+        ...leaveErrors,
+        [name]: ''
+      });
+    }
+  };
+  
+  const validateLeaveForm = () => {
+    const newErrors = {};
+    
+    if (!leaveForm.startDate) {
+      newErrors.startDate = 'Start date is required';
+    }
+    
+    if (!leaveForm.endDate) {
+      newErrors.endDate = 'End date is required';
+    }
+    
+    if (leaveForm.startDate && leaveForm.endDate && new Date(leaveForm.startDate) > new Date(leaveForm.endDate)) {
+      newErrors.endDate = 'End date must be after start date';
+    }
+    
+    if (!leaveForm.reason.trim()) {
+      newErrors.reason = 'Reason is required';
+    } else if (leaveForm.reason.trim().length < 10) {
+      newErrors.reason = 'Reason must be at least 10 characters';
+    }
+    
+    setLeaveErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
+  const handleLeaveSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateLeaveForm()) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      const userData = JSON.parse(localStorage.getItem('user'));
+      
+      const submitData = {
+        startDate: leaveForm.startDate,
+        endDate: leaveForm.endDate,
+        leaveType: leaveForm.leaveType,
+        reason: leaveForm.reason,
+        userId: userData.id || userData._id
+      };
+      
+      const response = await fetch('http://localhost:4321/api/leave-applications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(submitData)
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('Leave application submitted successfully!');
+        setLeaveForm({
+          startDate: '',
+          endDate: '',
+          leaveType: 'Personal',
+          reason: ''
+        });
+        // Switch back to all deliveries tab after successful submission
+        setActiveTab('all');
+        // Refresh leave applications
+        fetchLeaveApplications();
+      } else {
+        throw new Error(result.message || 'Failed to submit leave application');
+      }
+    } catch (error) {
+      console.error('Error submitting leave application:', error);
+      alert('Error: ' + error.message);
+    }
+  };
+
+  const toggleAvailability = async () => {
+    try {
+      const newAvailability = !user?.isAvailable;
+      
+      // Update local state immediately for better UX
+      const updatedUser = {
+        ...user,
+        isAvailable: newAvailability
+      };
+      setUser(updatedUser);
+      
+      // Save availability status to localStorage
+      localStorage.setItem('deliveryBoyAvailability', JSON.stringify(newAvailability));
+      
+      // Also update the user data in localStorage
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Call API to update availability status
+      // const response = await fetch('http://localhost:4321/api/delivery-boy/availability', {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Authorization': `Bearer ${localStorage.getItem('token')}`
+      //   },
+      //   body: JSON.stringify({ isAvailable: newAvailability })
+      // });
+      
+      // if (!response.ok) {
+      //   // Revert local state if API call fails
+      //   const revertedUser = {
+      //     ...user,
+      //     isAvailable: !newAvailability
+      //   };
+      //   setUser(revertedUser);
+      //   localStorage.setItem('deliveryBoyAvailability', JSON.stringify(!newAvailability));
+      //   localStorage.setItem('user', JSON.stringify(revertedUser));
+      // }
+    } catch (error) {
+      console.error('Error updating availability:', error);
+      // Revert local state on error
+      const revertedUser = {
+        ...user,
+        isAvailable: !user?.isAvailable
+      };
+      setUser(revertedUser);
+      localStorage.setItem('deliveryBoyAvailability', JSON.stringify(!user?.isAvailable));
+      localStorage.setItem('user', JSON.stringify(revertedUser));
+    }
+  };
+
+  const filteredDeliveries = deliveries.filter(delivery => {
+    if (activeTab === 'all') return true;
+    if (activeTab === 'in-transit') return delivery.status === 'in-transit';
+    return delivery.status === activeTab;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600 text-lg">Loading your deliveries...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 flex font-sans">
+      {/* Clean Left Sidebar - Fixed width with eco-green theme */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-52 bg-gradient-to-b from-green-700 to-emerald-800 shadow-xl border-r border-green-600 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+        <div className="flex items-center justify-between p-3 border-b border-green-600">
+          <div className="flex items-center space-x-2">
+            <div className="p-1.5 bg-white rounded-lg">
+              <FaLeaf className="text-green-700 text-sm" />
+            </div>
+            <h1 className="text-base font-bold text-white">EcoLoop</h1>
+          </div>
+          <button 
+            onClick={toggleSidebar} 
+            className="lg:hidden text-white hover:text-green-200"
+          >
+            <FaTimes className="text-sm" />
+          </button>
+        </div>
+        <nav className="p-2 mt-3">
+          <ul className="space-y-1">
+            <li>
+              <a href="/delivery-dashboard" className="flex items-center gap-2 p-2 bg-green-600 text-white rounded text-sm hover:bg-green-500 transition-colors duration-200">
+                <FaTruck className="text-white text-xs" /> Dashboard
+              </a>
+            </li>
+            <li>
+              <button type="button" className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
+                <FaRoute className="text-green-200 text-xs" /> My Routes
+              </button>
+            </li>
+            <li>
+              <button type="button" className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
+                <FaCheckCircle className="text-green-200 text-xs" /> Completed
+              </button>
+            </li>
+            <li>
+              <button type="button" className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
+                <FaCalendarAlt className="text-green-200 text-xs" /> Schedule
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={toggleProfileView} className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
+                <FaUser className="text-green-200 text-xs" /> Profile
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={toggleWeeklyAvailabilityModal} className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
+                <FaCalendarAlt className="text-green-200 text-xs" /> Weekly Availability
+              </button>
+            </li>
+            <li>
+              <a href="/leave-application" className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
+                <FaCalendarAlt className="text-green-200 text-xs" /> Apply Leave
+              </a>
+            </li>
+            <li>
+              <button type="button" onClick={() => setShowLeaveStatusModal(true)} className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
+                <FaCalendarCheck className="text-green-200 text-xs" /> My Leave Status
+              </button>
+            </li>
+            <li className="mt-4 pt-2 border-t border-green-600">
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-2 p-2 text-red-200 rounded text-sm hover:bg-red-600 transition-colors duration-200 w-full text-left"
+              >
+                <FaSignOutAlt className="text-xs" /> Logout
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={toggleSidebar}
+        ></div>
+      )}
+
+      {/* Profile View Modal */}
+      {showProfileView && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 transition-opacity" 
+              aria-hidden="true"
+              onClick={toggleProfileView}
+            >
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            
+            <div 
+              className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">
+                        Delivery Boy Profile
+                      </h3>
+                      <button
+                        type="button"
+                        className="text-gray-400 hover:text-gray-600"
+                        onClick={toggleProfileView}
+                      >
+                        <FaTimes className="h-6 w-6" />
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <div className="flex items-center justify-center mb-6">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white font-bold text-2xl">
+                          {user?.name?.charAt(0)?.toUpperCase() || 'D'}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Delivery Boy ID</label>
+                          <div className="mt-1 text-gray-900">{user?.deliveryBoyId || user?.id || 'N/A'}</div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Name</label>
+                          <div className="mt-1 text-gray-900">{user?.name || 'Delivery Hero'}</div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Contact Number</label>
+                          <div className="mt-1 text-gray-900">{user?.phone || user?.phoneNumber || user?.contactNumber || 'N/A'}</div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Assigned Area / Ward</label>
+                          <div className="mt-1 text-gray-900">{user?.assignedArea || user?.ward || user?.area || 'N/A'}</div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Availability Status</label>
+                          <div className="mt-1">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${user?.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              {user?.isAvailable ? 'Available' : 'Unavailable'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={toggleProfileView}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Weekly Availability Modal */}
+      {showWeeklyAvailabilityModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 transition-opacity" 
+              aria-hidden="true"
+              onClick={toggleWeeklyAvailabilityModal}
+            >
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            
+            <div 
+              className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">
+                        Weekly Availability
+                      </h3>
+                      <button
+                        type="button"
+                        className="text-gray-400 hover:text-gray-600"
+                        onClick={toggleWeeklyAvailabilityModal}
+                      >
+                        <FaTimes className="h-6 w-6" />
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-600 mb-4">
+                        Select your availability for the upcoming week:
+                      </p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-2">Monday</h4>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => toggleTimeSlot('monday', 'morning')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.monday.morning 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Morning
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('monday', 'afternoon')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.monday.afternoon 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Afternoon
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('monday', 'evening')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.monday.evening 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Evening
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-2">Tuesday</h4>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => toggleTimeSlot('tuesday', 'morning')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.tuesday.morning 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Morning
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('tuesday', 'afternoon')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.tuesday.afternoon 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Afternoon
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('tuesday', 'evening')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.tuesday.evening 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Evening
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-2">Wednesday</h4>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => toggleTimeSlot('wednesday', 'morning')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.wednesday.morning 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Morning
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('wednesday', 'afternoon')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.wednesday.afternoon 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Afternoon
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('wednesday', 'evening')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.wednesday.evening 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Evening
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-2">Thursday</h4>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => toggleTimeSlot('thursday', 'morning')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.thursday.morning 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Morning
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('thursday', 'afternoon')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.thursday.afternoon 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Afternoon
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('thursday', 'evening')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.thursday.evening 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Evening
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-2">Friday</h4>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => toggleTimeSlot('friday', 'morning')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.friday.morning 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Morning
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('friday', 'afternoon')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.friday.afternoon 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Afternoon
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('friday', 'evening')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.friday.evening 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Evening
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4">
+                          <h4 className="font-medium text-gray-900 mb-2">Saturday</h4>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => toggleTimeSlot('saturday', 'morning')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.saturday.morning 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Morning
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('saturday', 'afternoon')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.saturday.afternoon 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Afternoon
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('saturday', 'evening')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.saturday.evening 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Evening
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded-lg p-4 md:col-span-2">
+                          <h4 className="font-medium text-gray-900 mb-2">Sunday</h4>
+                          <div className="flex space-x-2">
+                            <button 
+                              onClick={() => toggleTimeSlot('sunday', 'morning')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.sunday.morning 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Morning
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('sunday', 'afternoon')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.sunday.afternoon 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Afternoon
+                            </button>
+                            <button 
+                              onClick={() => toggleTimeSlot('sunday', 'evening')}
+                              className={`flex-1 py-2 px-3 border rounded-md text-sm font-medium ${
+                                weeklyAvailability.sunday.evening 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              Evening
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={saveWeeklyAvailability}
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={toggleWeeklyAvailabilityModal}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Status Modal */}
+      {showLeaveStatusModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 transition-opacity" 
+              aria-hidden="true"
+              onClick={() => setShowLeaveStatusModal(false)}
+            >
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            
+            <div 
+              className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">
+                        My Leave Status
+                      </h3>
+                      <button
+                        type="button"
+                        className="text-gray-400 hover:text-gray-600"
+                        onClick={() => setShowLeaveStatusModal(false)}
+                      >
+                        <FaTimes className="h-6 w-6" />
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4">
+                      {leaveApplications.length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="text-gray-400 mb-4">
+                            <FaCalendarCheck className="mx-auto h-12 w-12" />
+                          </div>
+                          <p className="text-gray-600 text-lg">No leave applications found</p>
+                          <p className="text-gray-500 mt-2">You haven't applied for any leave yet.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <p className="text-gray-600 mb-4">Your recent leave applications:</p>
+                          <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                            <table className="min-w-full divide-y divide-gray-300">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Dates</th>
+                                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
+                                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Applied Date</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-200 bg-white">
+                                {leaveApplications.map((application) => (
+                                  <tr key={application.id}>
+                                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                                      {new Date(application.startDate).toLocaleDateString()} - {new Date(application.endDate).toLocaleDateString()} ({Math.ceil((new Date(application.endDate) - new Date(application.startDate)) / (1000 * 60 * 60 * 24)) + 1} days)
+                                    </td>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{application.leaveType}</td>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                      <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                                        application.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                        application.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                        'bg-yellow-100 text-yellow-800'
+                                      }`}>
+                                        {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                                      </span>
+                                    </td>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                      {new Date(application.appliedDate).toLocaleDateString()}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => setShowLeaveStatusModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - Flex with no margin */}
+      <div className="flex-1 w-full lg:w-[calc(100%-13rem)]">
+        {/* Top Header - Minimal padding with eco theme */}
+        <header className="bg-gradient-to-r from-green-50 to-emerald-50 shadow-sm border-b border-green-100">
+          <div className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-green-100">
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={toggleSidebar}
+                className="lg:hidden text-green-700 p-1 rounded-lg hover:bg-green-50"
+              >
+                <FaBars className="text-sm" />
+              </button>
+              <div>
+                <h1 className="text-base font-bold text-green-800 flex items-center gap-2">
+                  <FaTruck className="text-green-600" /> Delivery Dashboard
+                </h1>
+                <p className="text-green-600 text-xs flex items-center gap-1">
+                  <FaLeaf className="text-green-500" /> Managing your eco-friendly deliveries
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center">
+                <span className={`mr-2 px-2 py-1 rounded-full text-xs font-medium ${user?.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {user?.isAvailable ? 'Available' : 'Unavailable'}
+                </span>
+                <button
+                  onClick={toggleAvailability}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                    user?.isAvailable ? 'bg-green-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      user?.isAvailable ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="text-right">
+                <p className="text-green-800 font-medium text-xs">Welcome, {user?.name || 'Delivery Hero'}</p>
+                <p className="text-green-600 text-xs flex items-center gap-1">
+                  <FaLeaf className="text-green-500 text-xs" /> {user?.isAvailable ? 'Ready to serve' : 'Currently unavailable'}
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center text-white font-bold text-xs">
+                {user?.name?.charAt(0)?.toUpperCase() || 'D'}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Dashboard Content - Eco-friendly padding */}
+        <main className="p-4 bg-gradient-to-br from-green-50 to-teal-50 min-h-screen">
+          {/* Summary Statistic Cards - Eco-friendly theme */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl shadow-sm p-4 text-gray-800 border border-green-100 hover:shadow-md transition-shadow duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-green-600 text-xs font-medium flex items-center gap-1">
+                    <FaTruck className="text-green-500" /> Total Deliveries
+                  </p>
+                  <h3 className="text-xl font-bold mt-1">{deliveries?.length || 0}</h3>
+                </div>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <FaBox className="text-green-600 text-base" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm p-4 text-gray-800 border border-amber-100 hover:shadow-md transition-shadow duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-amber-600 text-xs font-medium flex items-center gap-1">
+                    <FaClock className="text-amber-500" /> Pending
+                  </p>
+                  <h3 className="text-xl font-bold mt-1">{deliveries?.filter(d => d.status === 'pending').length || 0}</h3>
+                </div>
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <FaClock className="text-amber-600 text-base" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl shadow-sm p-4 text-gray-800 border border-emerald-100 hover:shadow-md transition-shadow duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-emerald-600 text-xs font-medium flex items-center gap-1">
+                    <FaCheckCircle className="text-emerald-500" /> Completed
+                  </p>
+                  <h3 className="text-xl font-bold mt-1">{deliveries?.filter(d => d.status === 'completed').length || 0}</h3>
+                </div>
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <FaCheckCircle className="text-emerald-600 text-base" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl shadow-sm p-4 text-gray-800 border border-cyan-100 hover:shadow-md transition-shadow duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-cyan-600 text-xs font-medium flex items-center gap-1">
+                    <FaRoad className="text-cyan-500" /> Distance Covered
+                  </p>
+                  <h3 className="text-xl font-bold mt-1">
+                    {deliveries?.reduce((sum, delivery) => sum + (parseFloat(delivery.distance) || 0), 0).toFixed(1) || '0.0'} km
+                  </h3>
+                </div>
+                <div className="p-2 bg-cyan-100 rounded-lg">
+                  <FaRoad className="text-cyan-600 text-base" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tab Navigation - Rounded with eco theme */}
+          <div className="bg-white rounded-full shadow-sm p-1 mb-4 inline-flex border border-green-100 overflow-hidden">
+            <button 
+              onClick={() => setActiveTab('all')}
+              className={`px-3 py-2 rounded-full transition-all duration-200 text-sm font-medium ${activeTab === 'all' ? 'bg-green-500 text-white shadow-md' : 'text-green-600 hover:bg-green-50'}`}
+            >
+              <FaTruck className="inline mr-1" /> All Deliveries
+            </button>
+            <button 
+              onClick={() => setActiveTab('pending')}
+              className={`px-3 py-2 rounded-full transition-all duration-200 text-sm font-medium ${activeTab === 'pending' ? 'bg-amber-500 text-white shadow-md' : 'text-amber-600 hover:bg-amber-50'}`}
+            >
+              <FaClock className="inline mr-1" /> Pending
+            </button>
+            <button 
+              onClick={() => setActiveTab('in-transit')}
+              className={`px-3 py-2 rounded-full transition-all duration-200 text-sm font-medium ${activeTab === 'in-transit' ? 'bg-blue-500 text-white shadow-md' : 'text-blue-600 hover:bg-blue-50'}`}
+            >
+              <FaRoute className="inline mr-1" /> In-Transit
+            </button>
+            <button 
+              onClick={() => setActiveTab('completed')}
+              className={`px-3 py-2 rounded-full transition-all duration-200 text-sm font-medium ${activeTab === 'completed' ? 'bg-emerald-500 text-white shadow-md' : 'text-emerald-600 hover:bg-emerald-50'}`}
+            >
+              <FaCheckCircle className="inline mr-1" /> Completed
+            </button>
+          </div>
+
+          {/* Conditional rendering based on active tab */}
+          {activeTab === 'apply-leave' ? (
+            <div className="bg-white rounded-xl shadow-sm border border-green-100 p-6">
+              <h2 className="text-xl font-bold text-green-800 mb-6 flex items-center gap-2">
+                <FaCalendarAlt className="text-green-600" /> Apply for Leave
+              </h2>
+              
+              <form onSubmit={handleLeaveSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
+                      Start Date <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FaCalendarAlt className="text-gray-400" />
+                      </div>
+                      <input
+                        type="date"
+                        id="startDate"
+                        name="startDate"
+                        value={leaveForm.startDate}
+                        onChange={handleLeaveChange}
+                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm transition duration-200 ${
+                          leaveErrors.startDate ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      />
+                    </div>
+                    {leaveErrors.startDate && (
+                      <p className="mt-1 text-sm text-red-600">{leaveErrors.startDate}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+                      End Date <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FaCalendarAlt className="text-gray-400" />
+                      </div>
+                      <input
+                        type="date"
+                        id="endDate"
+                        name="endDate"
+                        value={leaveForm.endDate}
+                        onChange={handleLeaveChange}
+                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm transition duration-200 ${
+                          leaveErrors.endDate ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      />
+                    </div>
+                    {leaveErrors.endDate && (
+                      <p className="mt-1 text-sm text-red-600">{leaveErrors.endDate}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="leaveType" className="block text-sm font-medium text-gray-700 mb-2">
+                    Leave Type
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaBriefcase className="text-gray-400" />
+                    </div>
+                    <select
+                      id="leaveType"
+                      name="leaveType"
+                      value={leaveForm.leaveType}
+                      onChange={handleLeaveChange}
+                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm transition duration-200"
+                    >
+                      <option value="Personal">Personal</option>
+                      <option value="Medical">Medical</option>
+                      <option value="Emergency">Emergency</option>
+                      <option value="Vacation">Vacation</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-2">
+                    Reason <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute top-3 left-3">
+                      <FaStickyNote className="text-gray-400" />
+                    </div>
+                    <textarea
+                      id="reason"
+                      name="reason"
+                      rows="4"
+                      value={leaveForm.reason}
+                      onChange={handleLeaveChange}
+                      placeholder="Please provide detailed reason for your leave..."
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 shadow-sm transition duration-200 resize-none ${
+                        leaveErrors.reason ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    ></textarea>
+                  </div>
+                  {leaveErrors.reason && (
+                    <p className="mt-1 text-sm text-red-600">{leaveErrors.reason}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium flex items-center"
+                  >
+                    Submit Leave Application
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            /* Deliveries Grid - Card-based UI with eco theme */
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {filteredDeliveries.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <div className="inline-block p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-100">
+                    <div className="mb-4 flex justify-center">
+                      <div className="p-4 bg-green-100 rounded-full">
+                        <FaTruck className="text-green-600 text-3xl mx-auto" />
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-green-800 mb-2">No deliveries found</h3>
+                    <p className="text-green-600 text-sm max-w-md mx-auto">Check back later for new delivery assignments. Your eco-friendly journey continues!</p>
+                  </div>
+                </div>
+              ) : (
+                filteredDeliveries.map((delivery) => (
+                  <div key={delivery.id} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-green-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="text-base font-bold text-green-800 flex items-center gap-2">
+                            <FaShoppingCart className="text-green-600" /> #{delivery.orderId}
+                          </h3>
+                          <div className="flex gap-2 mt-2">
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(delivery.status)}`}>
+                              {delivery.status.charAt(0).toUpperCase() + delivery.status.slice(1)}
+                            </span>
+                            <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${getPriorityColor(delivery.priority)}`}>
+                              {delivery.priority}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-green-700 flex items-center gap-1">
+                            <FaClock className="text-green-500" /> {delivery.scheduledTime}
+                          </p>
+                          <p className="text-sm text-green-700 flex items-center gap-1 mt-1">
+                            <FaRoad className="text-green-500" /> {delivery.distance}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-start p-2 bg-green-50 rounded-lg border border-green-100">
+                          <div className="p-1.5 bg-green-100 rounded mr-3 flex-shrink-0">
+                            <FaUser className="text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-green-800 text-sm">{delivery.customerName}</p>
+                            <p className="text-green-600 text-sm flex items-center gap-1">
+                              <FaPhone className="text-green-500 text-xs" /> {delivery.customerPhone}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start p-2 bg-green-50 rounded-lg border border-green-100">
+                          <div className="p-1.5 bg-green-100 rounded mr-3 flex-shrink-0">
+                            <FaMapMarkerAlt className="text-green-600" />
+                          </div>
+                          <p className="text-green-700 text-sm">{delivery.customerAddress}</p>
+                        </div>
+                        
+                        <div className="flex items-start p-2 bg-green-50 rounded-lg border border-green-100">
+                          <div className="p-1.5 bg-green-100 rounded mr-3 flex-shrink-0">
+                            <FaBox className="text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-green-700 text-sm">{delivery.items.join(', ')}</p>
+                            <p className="text-green-600 text-sm flex items-center gap-1 mt-1">
+                              <FaWeight className="text-green-500 text-xs" /> {delivery.weight}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {delivery.notes && (
+                          <div className="p-3 bg-amber-50 rounded-lg border border-amber-100">
+                            <p className="text-sm text-amber-700 flex items-start gap-2">
+                              <span className="font-medium text-amber-800">Notes:</span> {delivery.notes}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center pt-3 border-t border-green-100">
+                        <button className="px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors font-medium flex items-center gap-1">
+                          <FaChartLine className="text-green-600" /> Details
+                        </button>
+                        <div className="flex space-x-2">
+                          {delivery.status === 'pending' && (
+                            <button
+                              onClick={() => updateDeliveryStatus(delivery.id, 'in-transit')}
+                              className="px-3 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors font-medium flex items-center gap-1"
+                            >
+                              <FaRoute className="text-white" /> Start
+                            </button>
+                          )}
+                          {delivery.status === 'in-transit' && (
+                            <button
+                              onClick={() => updateDeliveryStatus(delivery.id, 'completed')}
+                              className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600 transition-colors font-medium flex items-center gap-1"
+                            >
+                              <FaCheckCircle className="text-white" /> Done
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  </div>
+  </div>
+  );
+};
+
+export default DeliveryDashboard;

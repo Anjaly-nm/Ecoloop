@@ -1,0 +1,1 @@
+require('mongoose').connect('mongodb://localhost:27017/ecoloop').then(async () => { const Order = require('./models/user/order'); const orders = await Order.find({}); console.log('Total orders:', orders.length); process.exit(); });
