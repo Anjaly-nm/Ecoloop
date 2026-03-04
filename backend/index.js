@@ -63,12 +63,16 @@ const { auth: firebaseAuth } = require('./firebaseAdmin');
 // MIDDLEWARES - APPLYING FIXES HERE
 // -----------------------------------------------------------------
 app.use(useragent.express());
-// 1. UPDATED CORS CONFIGURATION
+// 1. UPDATED CORS CONFIGURATION (allow Flutter web + mobile)
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:4321'], // Allow both frontend and backend ports
+  origin: (origin, callback) => {
+    // Allow all origins, including Flutter web (http://localhost:xxxx)
+    // and mobile apps (which often have no origin)
+    callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'token'],
-  credentials: true // Allow credentials
+  credentials: true
 }));
 app.use(helmet());
 app.use(bodyParser.json({ limit: '10mb' })); // Increase limit for larger payloads
@@ -145,6 +149,7 @@ app.use('/api/events', eventsRoutes); // ✅ Added events route
 app.use('/api/leave-applications', leaveApplicationRoutes); // ✅ Added leave application route
 app.use('/api/messages', require('./routes/messages')); // ✅ Added messages route
 app.use('/api/salary', require('./routes/salary')); // ✅ Added salary route
+app.use('/api/collector-dashboard', require('./routes/collectorDashboard')); // ✅ Added collector dashboard route
 
 // MongoDB connection (unchanged)
 mongoose

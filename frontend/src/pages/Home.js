@@ -13,7 +13,8 @@ import {
   Instagram,
   Twitter,
   Facebook,
-  ShoppingBag
+  ShoppingBag,
+  ClipboardCheck
 } from 'lucide-react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -82,6 +83,9 @@ const Home = () => {
           <div className="hidden md:flex items-center gap-8 text-sm font-bold text-emerald-950/70 text-left">
             <a href="#features" className="hover:text-emerald-600 transition-colors text-left">Features</a>
             <a href="#stats" className="hover:text-emerald-600 transition-colors text-left">Impact</a>
+            <button onClick={() => navigate('/application-options')} className="hover:text-emerald-600 transition-colors text-left flex items-center gap-1">
+              <ClipboardCheck size={14} /> Apply
+            </button>
             <button onClick={() => navigate('/market-shop')} className="hover:text-emerald-600 transition-colors text-left">Shop</button>
             <a href="/about" className="hover:text-emerald-600 transition-colors text-left">About</a>
           </div>
@@ -139,6 +143,13 @@ const Home = () => {
                 className="px-8 py-4 bg-emerald-950 text-white rounded-2xl font-bold hover:bg-emerald-900 transition-all active:scale-95"
               >
                 Join the Revolution
+              </button>
+              <button
+                onClick={() => navigate('/application-options')}
+                className="px-8 py-4 bg-white text-emerald-900 border-2 border-emerald-900 rounded-2xl font-bold hover:bg-emerald-50 transition-all active:scale-95 flex items-center gap-2"
+              >
+                Join as Partner
+                <ClipboardCheck size={18} />
               </button>
             </div>
 
@@ -307,6 +318,7 @@ const Home = () => {
               <h4 className="text-emerald-950 font-black uppercase text-xs tracking-widest mb-6 border-b border-emerald-100 pb-2">Navigation</h4>
               <ul className="space-y-4 text-sm font-bold text-emerald-950/60">
                 <li><a href="/" className="hover:text-emerald-600 transition-colors">Home</a></li>
+                <li><button onClick={() => navigate('/application-options')} className="hover:text-emerald-600 transition-colors text-left font-bold">Join as Partner</button></li>
                 <li><a href="/about" className="hover:text-emerald-600 transition-colors">About</a></li>
                 <li><button onClick={() => navigate('/market-shop')} className="hover:text-emerald-600 transition-colors text-left">Eco Shop</button></li>
                 <li><a href="/events" className="hover:text-emerald-600 transition-colors">Global Events</a></li>

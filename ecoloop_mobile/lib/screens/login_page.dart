@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Adjust this to your backend base URL.
-// Using ADB Reverse: http://127.0.0.1:4321 corresponds to PC's localhost
-const String apiBaseUrl = 'http://127.0.0.1:4321/api/user';
+// Hosted backend base URL (Vercel)
+const String apiBaseUrl = 'https://ecoloop-eight.vercel.app/api/user';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Using ADB Reverse: http://127.0.0.1:4321 corresponds to PC's localhost
-const String apiBaseUrl = 'http://127.0.0.1:4321';
+// Hosted backend base URL (Vercel)
+const String apiBaseUrl = 'https://ecoloop-eight.vercel.app';
 
 class DeliveryDashboard extends StatefulWidget {
   const DeliveryDashboard({super.key});

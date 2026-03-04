@@ -4,23 +4,27 @@ const wasteSubmissionSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     category: { type: String },
     category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
-    
+
     // Set default to null to require explicit assignment (no auto-assignment)
     collector_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    
+
     scheduled_date: { type: Date, required: true },
-    
+
     // 🚩 NEW FIELDS for immediate pickup identification and weight
-    is_immediate: { type: Boolean, default: false }, 
+    is_immediate: { type: Boolean, default: false },
     weight: { type: Number },
-    
+
     // STATUS: Added 'new' to enum, default is overridden below
-    status: { 
-        type: String, 
-        enum: ["new", "pending", "collected", "approved", "rejected", "unhandled"], 
-        default: "approved" 
+    status: {
+        type: String,
+        enum: ["new", "pending", "collected", "approved", "rejected", "unhandled"],
+        default: "approved"
     },
-    pendingReason: { type: String, default: "" } 
+    pendingReason: { type: String, default: "" },
+    // 📍 LOCATION & SCHEDULING
+    pickupDate: { type: Date },
+    latitude: { type: Number },
+    longitude: { type: Number }
 }, { timestamps: true });
 
 // 🚀 PRE-SAVE HOOK: Overrides default status/collector for immediate pickups.
@@ -30,7 +34,7 @@ wasteSubmissionSchema.pre('save', function (next) {
         if (this.is_immediate === true || (this.weight && this.weight > 0)) {
             // If it's an immediate/urgent pickup, set status to 'new' (or 'pending') 
             // to require admin handling and prevent auto-assignment.
-            this.status = "pending"; 
+            this.status = "pending";
             this.collector_id = null; // Ensure no collector is assigned automatically
         } else if (!this.status || this.status === 'approved') {
             // For standard scheduled pickups, keep the default 'approved' status (if applicable).

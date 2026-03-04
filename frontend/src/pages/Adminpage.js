@@ -1,22 +1,32 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// 1. Import new icon: FaBookOpen (or another suitable icon)
-import { 
-  FaSignOutAlt, 
-  FaTachometerAlt, 
-  FaTrashAlt, 
-  FaStore, 
-  FaChartLine, 
-  FaUsers, 
-  FaLeaf,
-  FaSeedling,
-  FaBookOpen,
-  FaClipboardList // New icon for applications
-} from "react-icons/fa";
-// NOTE: Replaced external CSS with Tailwind CSS utility classes
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutDashboard,
+  Trash2,
+  Store,
+  LineChart,
+  Users,
+  Leaf,
+  Zap,
+  BookOpen,
+  ClipboardCheck,
+  LogOut,
+  Bell,
+  Search,
+  UserCircle,
+  Clock,
+  Menu,
+  X,
+  ChevronRight,
+  TrendingUp,
+  Package,
+  Activity
+} from "lucide-react";
 
 const AdminPage = () => {
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -24,158 +34,177 @@ const AdminPage = () => {
     navigate("/");
   };
 
-  // --- Helper Components for Cleanliness ---
+  const menuItems = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/adminpage" },
+    { icon: Trash2, label: "Waste Management", path: "/admin/waste-management" },
+    { icon: BookOpen, label: "Learning Videos", path: "/admin/LearningvideosManagement" },
+    { icon: Users, label: "Users Management", path: "/admin/UserManage" },
+    { icon: Store, label: "Sellers & Shop", path: "/admin/shop-management" },
+    { icon: ClipboardCheck, label: "Applications", path: "/admin/applications" },
+    { icon: Clock, label: "Leave Requests", path: "/admin/leave-applications" },
+    { icon: LineChart, label: "System Reports", path: "/admin/SystemReports" },
+    { icon: Activity, label: "Assign Delivery", path: "/admin/assign-delivery-boy" },
+  ];
 
-  // Component for Sidebar Links (now uses a button and handles navigation)
-  const SidebarItem = ({ icon: Icon, label, path }) => (
-    <li className="mb-2">
-      <button
-        onClick={() => navigate(path)}
-        // Professional sidebar styling - CHANGED: indigo-700 to emerald-600
-        className="flex items-center w-full p-3 text-sm font-medium text-gray-300 rounded-lg hover:bg-emerald-600 hover:text-white transition duration-200 text-left"
-      >
-        <Icon className="mr-3 text-lg" />
-        {label}
-      </button>
-    </li>
-  );
+  const quickAccess = [
+    { icon: Trash2, title: "Waste Control", path: "/admin/waste-management", color: "emerald", desc: "Manage submissions" },
+    { icon: Users, title: "Account Control", path: "/admin/UserManage", color: "blue", desc: "Verify members" },
+    { icon: BookOpen, title: "Education Hub", path: "/admin/LearningvideosManagement", color: "purple", desc: "Learning content" },
+    { icon: Store, title: "Market Hub", path: "/admin/shop-management", color: "amber", desc: "Store & Inventory" },
+    { icon: LineChart, title: "Data Reports", path: "/admin/SystemReports", color: "rose", desc: "System analytics" },
+    { icon: Leaf, title: "EcoPoints", path: "/admin/Ecopints", color: "green", desc: "Rewards control" },
+    { icon: Package, title: "Eco Products", path: "/products", color: "orange", desc: "Verify listings" },
+    { icon: Zap, title: "Efficiency", path: "/adminpage", color: "indigo", desc: "Optimize routes" },
+  ];
 
-  // Component for Dashboard Cards (now handles navigation)
-  const DashboardCard = ({ icon: Icon, title, path, iconColor }) => (
-    <div
-      onClick={() => navigate(path)}
-      // Modern card styling with hover effects and distinct icon background
-      className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition duration-300 transform hover:-translate-y-1 cursor-pointer flex flex-col items-center justify-center text-center h-40"
-    >
-        <div className={`p-3 mb-3 rounded-full ${iconColor.replace('text', 'bg-opacity-10 text')}`}>
-            <Icon className={`text-3xl ${iconColor}`} />
-        </div>
-      <h4 className="text-lg font-semibold text-gray-800">{title}</h4>
-    </div>
-  );
-  // ----------------------------------------
+  const stats = [
+    { label: "Active Users", value: "1,284", icon: Users, trend: "+12%" },
+    { label: "Total Waste", value: "48.2 Tons", icon: Trash2, trend: "+8%" },
+    { label: "Shop Sales", value: "₹2.4L", icon: TrendingUp, trend: "+15%" },
+    { label: "EcoPoints", value: "85K", icon: Leaf, trend: "+22%" },
+  ];
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans antialiased">
-      
-      {/* Sidebar - Dark, Professional Look (bg-gray-800/900 is standard for admin panels) */}
-      <aside className="w-64 bg-gray-900 shadow-2xl flex flex-col p-5">
-        <h1 className="text-2xl font-bold text-white mb-10 border-b border-gray-700 pb-4">
-          {/* CHANGED: text-indigo-500 to text-green-500 */}
-          <span className="text-green-500">Eco</span>Admin
-        </h1>
-        
-        <nav className="flex flex-col gap-1 flex-grow">
-          <ul className="space-y-1">
-            {/* Using buttons/SidebarItem for professional SPA navigation */}
-            <SidebarItem icon={FaTachometerAlt} label="Dashboard" path="/Adminpage" />
-            <SidebarItem icon={FaTrashAlt} label="Waste Management" path="/admin/waste-management" />
-            
-            {/* 2. Add the new Sidebar Item for Learning Videos */}
-            <SidebarItem 
-              icon={FaBookOpen} 
-              label="Learning Videos" 
-              path="/admin/learningvideosManagement" // Define the route path
-            />
-            <SidebarItem icon={FaStore} label="profile" path="/admin/Profile" />
-            <SidebarItem icon={FaStore} label="Sellers & Shop" path="/admin/shop-management" />
-            <SidebarItem icon={FaClipboardList} label="Applications" path="/admin/applications" /> {/* New Applications link */}
-            <SidebarItem icon={FaClipboardList} label="Leave Applications" path="/admin/leave-applications" /> {/* Leave Applications link */}
-            <SidebarItem icon={FaChartLine} label="System Reports" path="/admin/SystemReports" />
-          </ul>
-        </nav>
-        
-        {/* Logout Button in Sidebar Footer */}
-        <button
-          onClick={handleLogout}
-          // Kept red for a strong "Exit/Danger" action
-          className="flex items-center justify-center gap-2 p-3 mt-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-200"
-        >
-          <FaSignOutAlt />
-          <span>Logout</span>
-        </button>
+    <div className="flex h-screen bg-slate-50 font-sans antialiased text-slate-900 overflow-hidden">
+
+      {/* Sidebar Overlay for Mobile */}
+      <AnimatePresence>
+        {!sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(true)}
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 transition-all duration-300 shadow-xl flex flex-col ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="p-6 flex items-center justify-between border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-600 rounded-xl shadow-lg shadow-purple-200">
+              <Leaf className="text-white w-6 h-6" />
+            </div>
+            <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase">EcoLoop<span className="text-purple-600">Admin</span></h1>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 hover:bg-slate-50 rounded-lg transition-colors text-slate-500">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-grow overflow-y-auto px-4 py-8 scrollbar-hide">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 px-3">Main Control Console</p>
+          <nav className="space-y-1.5">
+            {menuItems.map((item, idx) => (
+              <button
+                key={idx}
+                onClick={() => navigate(item.path)}
+                className={`group flex items-center justify-between w-full p-3.5 text-sm font-bold rounded-2xl transition-all duration-200 text-left ${idx === 0
+                  ? "bg-purple-50 text-purple-700 shadow-sm shadow-purple-100/50"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+              >
+                <div className="flex items-center">
+                  <item.icon className={`mr-3.5 transition-colors ${idx === 0 ? "text-purple-600" : "text-slate-400 group-hover:text-slate-600"}`} size={18} />
+                  <span>{item.label}</span>
+                </div>
+                {idx === 0 && <ChevronRight size={14} className="text-purple-400" />}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center gap-2 w-full p-3.5 bg-white text-rose-500 font-bold rounded-2xl border border-rose-100 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all duration-300 group shadow-sm"
+          >
+            <LogOut size={18} className="transition-transform group-hover:translate-x-0.5" />
+            <span>Secure Logout</span>
+          </button>
+        </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-10 overflow-y-auto">
-        
-        {/* Header/Greeting - Clean and informative */}
-        <header className="flex justify-between items-center mb-8 pb-4 border-b border-gray-300">
-          <h2 className="text-3xl font-bold text-gray-900">Dashboard Overview</h2>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col lg:ml-72 transition-all duration-300">
+
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-slate-100 px-8 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-all border border-slate-200 lg:hidden">
+              <Menu size={20} />
+            </button>
+            <div className="hidden md:flex items-center bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200 focus-within:ring-2 focus-within:ring-purple-500/10 focus-within:border-purple-500/50 focus-within:bg-white transition-all">
+              <Search className="text-slate-400 mr-2" size={16} />
+              <input type="text" placeholder="Search system resources..." className="bg-transparent border-none focus:outline-none text-sm font-bold w-64 placeholder:text-slate-400" />
+            </div>
+          </div>
+
           <div className="flex items-center gap-4">
-            <span className="text-gray-600 font-medium bg-white p-2 rounded-lg shadow-sm">Hello, Administrator</span>
+            <button className="relative p-2.5 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-all border border-slate-200 group">
+              <Bell size={18} />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full border-2 border-white shadow-[0_0_8px_rgba(168,85,247,0.5)]"></span>
+            </button>
+            <div className="h-10 w-[1px] bg-slate-200 mx-2"></div>
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-black text-slate-900 leading-tight uppercase tracking-tight">Anjaly Admin</p>
+                <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">Super Admin</p>
+              </div>
+              <div className="w-10 h-10 bg-purple-600 text-white rounded-xl shadow-lg shadow-purple-200 flex items-center justify-center font-black text-sm">
+                A
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Welcome Card - CHANGED: indigo gradient to a teal/emerald gradient */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white rounded-xl p-6 shadow-xl mb-8">
-          <h3 className="text-2xl font-semibold mb-2">Welcome Back, EcoLoop Admin 👋</h3>
-          <p className="text-teal-200">
-            Quickly manage waste submissions, user accounts, and shop listings to keep the system efficient.
-          </p>
-        </div>
+        {/* Dashboard Content */}
+        <main className="flex-1 p-8 overflow-y-auto scrollbar-hide">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Page Title & Breadcrumbs */}
+            <div className="mb-10">
+              <h1 className="text-4xl font-black text-slate-900 tracking-tightest leading-tight">Dashboard Overview</h1>
+              <p className="text-sm text-slate-500 font-medium tracking-tight">Monitoring the core of EcoLoop intelligence architecture.</p>
+            </div>
 
-        {/* Quick Access Cards Grid */}
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Quick Access</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          <DashboardCard
-            icon={FaTrashAlt}
-            title="Waste Management"
-            path="/admin/waste-management"
-            iconColor="text-yellow-600"
-          />
 
-          <DashboardCard
-            icon={FaUsers}
-            title="Users Management"
-            path="/admin/UserManage"
-            iconColor="text-blue-600"
-          />
-          
-          {/* 3. Add the new Dashboard Card for Learning Videos */}
-          <DashboardCard
-            icon={FaBookOpen}
-            title="Learning Videos"
-            path="/admin/LearningvideosManagement" // Use the same route path
-            iconColor="text-purple-600" // Use a distinct color (purple works well for learning/knowledge)
-          />
 
-          <DashboardCard
-            icon={FaStore}
-            title="Sellers & Shop"
-            path="/admin/shop-management"
-            iconColor="text-yellow-600"
-          />
-          
-          <DashboardCard
-            icon={FaChartLine}
-            title="System Reports"
-            path="/admin/SystemReports"
-            iconColor="text-red-600"
-          />
+            {/* Quick Access Grid */}
+            <div className="mb-12">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tightest">Intelligence Grid</h3>
+                <div className="h-[1px] flex-grow bg-slate-100 mx-8"></div>
+              </div>
 
-          <DashboardCard
-            icon={FaLeaf}
-            title="Ecopoints"
-            path="/admin/Ecopints"
-            iconColor="text-green-700"
-          />
-
-          <DashboardCard
-            icon={FaUsers}
-            title="ward & users"
-            iconColor="text-grey-600"
-          />
-
-          <DashboardCard
-            icon={FaSeedling}
-            title="Eco products"
-            iconColor="text-orange-600"
-          />
-
-        </div>
-      </main>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {quickAccess.map((card, idx) => (
+                  <motion.div
+                    key={idx}
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    onClick={() => card.path && navigate(card.path)}
+                    className="bg-white p-7 rounded-[2.2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-purple-200/30 transition-all cursor-pointer group"
+                  >
+                    <div className={`w-14 h-14 rounded-2xl bg-${card.color === 'emerald' ? 'purple' : card.color}-50 flex items-center justify-center text-${card.color === 'emerald' ? 'purple' : card.color}-600 mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform`}>
+                      <card.icon size={28} />
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-lg font-black text-slate-900 tracking-tight group-hover:text-purple-700 transition-colors">{card.title}</h4>
+                      <ChevronRight size={16} className="text-slate-300 group-hover:translate-x-1 transition-transform group-hover:text-purple-500" />
+                    </div>
+                    <p className="text-xs font-medium text-slate-400 leading-relaxed uppercase tracking-widest">{card.desc}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </main>
+      </div>
     </div>
   );
 };

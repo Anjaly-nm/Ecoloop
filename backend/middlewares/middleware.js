@@ -7,7 +7,7 @@ const verifyToken = async (req) => {
   try {
     // Extract token from Authorization header (Bearer token) or legacy token header
     let token = req.headers.token || req.body.token || req.query.token;
-    
+
     // Check Authorization header
     if (!token && req.headers.authorization) {
       const authHeader = req.headers.authorization;
@@ -15,7 +15,7 @@ const verifyToken = async (req) => {
         token = authHeader.substring(7); // Remove 'Bearer ' prefix
       }
     }
-    
+
     if (!token) return { error: { status: 400, message: 'Token not provided.' } };
 
     const decoded = jwt.verify(token, SECRET_KEY); // decode JWT
@@ -25,7 +25,8 @@ const verifyToken = async (req) => {
 
     return { user: foundUser };
   } catch (error) {
-    return { error: { status: 500, message: 'Server error', detail: error.message } };
+    // Return 401 for any token-related errors (expired, invalid, etc.)
+    return { error: { status: 401, message: 'Authentication failed', detail: error.message } };
   }
 };
 

@@ -8,16 +8,35 @@ const { isCollector } = require("../middlewares/middleware");
 router.get("/", isCollector, async (req, res) => {
   try {
     const collectorId = req.user._id;
+    const { filter } = req.query; // 'all', 'today', 'tomorrow', 'weekly'
 
-    if (!collectorId) {
-      return res.status(401).json({ message: "Unauthorized: collector ID missing" });
+    let query = {
+      collector_id: new mongoose.Types.ObjectId(collectorId),
+    };
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    if (filter === "today") {
+      const endOfToday = new Date(startOfToday);
+      endOfToday.setHours(23, 59, 59, 999);
+      query.scheduled_date = { $gte: startOfToday, $lte: endOfToday };
+    } else if (filter === "tomorrow") {
+      const startOfTomorrow = new Date(startOfToday);
+      startOfTomorrow.setDate(startOfToday.getDate() + 1);
+      const endOfTomorrow = new Date(startOfTomorrow);
+      endOfTomorrow.setHours(23, 59, 59, 999);
+      query.scheduled_date = { $gte: startOfTomorrow, $lte: endOfTomorrow };
+    } else if (filter === "weekly") {
+      const endOfWeekly = new Date(startOfToday);
+      endOfWeekly.setDate(startOfToday.getDate() + 7);
+      query.scheduled_date = { $gte: startOfToday, $lte: endOfWeekly };
     }
 
-    const pickups = await Pickup.find({
-      collector_id: new mongoose.Types.ObjectId(collectorId),
-    })
+    const pickups = await Pickup.find(query)
       .populate("user_id", "name email wardNumber houseNumber")
       .populate("category_id", "name")
+      .sort({ scheduled_date: 1 })
       .lean();
 
     res.status(200).json({ success: true, pickups });
