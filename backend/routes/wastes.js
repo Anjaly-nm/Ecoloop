@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 // Assuming these paths are correct for your file structure
-const WasteSubmission = require("../models/user/wasteSubmissions"); 
+const WasteSubmission = require("../models/user/wasteSubmissions");
 const User = require("../models/user/users");
 const CollectorAssignment = require("../models/admin/collectorAssignment");
 const { sendTextEmail } = require("../control/emailhelp");
@@ -10,100 +10,101 @@ const category = require("../models/admin/category");
 // 📌 Add new waste submission (Standard or Immediate Pickup)
 router.post("/add", async (req, res) => {
     try {
-        // 🔑 FIX: Removed 'status' from destructuring. Rely on 'is_immediate' flag.
         const { user_id, category, category_id, scheduled_date, weight, is_immediate } = req.body;
 
-        // Determine if it's an immediate pickup request using the new flag
-        const isFastPickup = is_immediate === true; 
-        
-        // ✅ Validate input
+        const isFastPickup = is_immediate === true;
+
         if (!user_id) return res.status(400).json({ message: "❌ user_id is missing" });
         if (!category_id) return res.status(400).json({ message: "❌ category_id is required" });
-        
-        // Ensure all submissions have a timestamp (scheduled_date).
-        if (!scheduled_date) return res.status(400).json({ message: "❌ scheduled_date is missing. All pickups must have a scheduled time." });
+        if (!scheduled_date) return res.status(400).json({ message: "❌ scheduled_date is missing" });
 
-        // IMMEDIATE PICKUP VALIDATION (Weight is required)
         if (isFastPickup) {
-            if (!weight) return res.status(400).json({ message: "❌ Estimated weight is required for immediate pickup" });
-            if (isNaN(parseFloat(weight)) || parseFloat(weight) <= 0) return res.status(400).json({ message: "❌ Weight must be a positive number" });
+            if (!weight) return res.status(400).json({ message: "❌ Weight is required for immediate pickup" });
         }
 
-        // ✅ Find user 
         const user = await User.findById(user_id);
         if (!user) return res.status(404).json({ message: "❌ User not found" });
         if (!user.wardNumber) return res.status(400).json({ message: "❌ User has no wardNumber assigned" });
 
-        // --- Collector Assignment Logic: ONLY FOR STANDARD PICKUPS ---
-
         let collectorId = null;
+        let finalStatus = "pending";
+        let reason = "";
+
+        // --- IMPROVED ASSIGNMENT LOGIC ---
 
         if (!isFastPickup) {
-            // STANDARD PICKUP LOGIC: Must assign a collector based on category and ward
+            // 1. Find the collector assigned to this ward
             const assignment = await CollectorAssignment.findOne({
-                wardNumber: user.wardNumber.trim(),
-                categoryId: category_id,
+                wardNumber: user.wardNumber.trim()
             });
 
-            if (!assignment) {
-                return res.status(400).json({
-                    message: "❌ No collector assigned for this ward & category. Standard pickup failed.",
-                });
+            if (assignment) {
+                const assignedCollectorId = assignment.collectorId;
+
+                // 2. Check active tasks (status: approved or in-progress)
+                const activeTasks = await WasteSubmission.find({
+                    collector_id: assignedCollectorId,
+                    status: { $in: ["approved", "in-progress"] }
+                }).populate("user_id", "wardNumber");
+
+                const activeCount = activeTasks.length;
+                const targetWard = String(user.wardNumber).trim();
+
+                // 3. Find tasks in OTHER wards
+                const otherWardTasks = activeTasks.filter(task =>
+                    task.user_id && String(task.user_id.wardNumber).trim() !== targetWard
+                );
+
+                // LOGIC: 
+                // If there are tasks in OTHER wards, enforce a limit (e.g., 3).
+                // If ALL tasks are in the SAME ward, we don't block assignment based on count.
+                if (otherWardTasks.length > 0 && activeCount >= 3) {
+                    reason = `Collector workload limit reached (max 3 across different wards). Currently in Ward ${otherWardTasks[0].user_id.wardNumber}.`;
+                } else {
+                    // All checks pass: Auto-assign
+                    collectorId = assignedCollectorId;
+                    finalStatus = "approved";
+                }
+            } else {
+                reason = "No collector assigned to this ward.";
             }
-            collectorId = assignment.collectorId;
-            
-        } 
-        
-        // 💡 NOTE: If isFastPickup is true, collectorId remains 'null', 
-        // which is correct for manual admin assignment. The Mongoose hook 
-        // ensures the status is set to 'pending'.
+        } else {
+            reason = "Immediate pickup requires manual admin assignment.";
+        }
 
         // ✅ Create and Save new waste submission 
         const newSubmission = new WasteSubmission({
             user_id,
             category: category || null,
             category_id: category_id || null,
-            // collectorId is null for immediate and set for standard
-            collector_id: collectorId, 
-            scheduled_date: scheduled_date, 
-            
-            // 🔑 CRITICAL: Pass the flag and weight exactly as needed by the schema/hook
+            collector_id: collectorId,
+            scheduled_date: scheduled_date,
             is_immediate: isFastPickup,
-            weight: isFastPickup ? parseFloat(weight) : undefined, 
-            
-            // 💡 FIX: Removed the manual 'status: "approved"' line. 
-            // The Mongoose pre('save') hook now handles setting the status 
-            // to 'pending' for immediate and 'approved' for standard.
+            weight: isFastPickup ? parseFloat(weight) : undefined,
+            status: finalStatus,
+            pendingReason: reason
         });
 
         await newSubmission.save();
-        
-        // Final Status check for response message (gets status after hook runs)
-        // Must reload the document or access the saved value, but newSubmission.status should be correct after .save()
-        const finalStatus = newSubmission.status;
 
-        // 🔑 Send the successful response immediately.
         res.status(201).json({
-            message: `✅ Waste submission stored successfully. Type: ${isFastPickup ? 'IMMEDIATE' : 'STANDARD'}. Status: ${finalStatus.toUpperCase()}.`,
+            message: `✅ Waste submission stored. Status: ${finalStatus.toUpperCase()}. ${reason ? '(' + reason + ')' : ''}`,
             data: newSubmission,
         });
 
         // ✅ Send confirmation email ASYNCHRONOUSLY 
         if (user.email) {
             (async () => {
-                const subject = isFastPickup ? `⚡ Urgent Pickup Requested (${finalStatus})` : `🌿 Standard Pickup Scheduled (${finalStatus})`;
+                const subject = isFastPickup ? `⚡ Urgent Pickup Requested (${finalStatus})` : `🌿 Waste Pickup ${finalStatus === 'approved' ? 'Approved' : 'Pending'} (${finalStatus})`;
                 const body = `Hi ${user.name || "there"},\n\nYour waste submission for ${category || "selected category"} has been recorded.\n
                 Status: **${finalStatus.toUpperCase()}**.\n
-                ${isFastPickup ? `Weight: ${weight} kg. This request is now PENDING administrative review.` : `Scheduled Date: ${new Date(scheduled_date).toDateString()}.`}`;
+                ${reason ? `Note: ${reason}\n` : ''}
+                ${isFastPickup ? `Weight: ${weight} kg.` : `Scheduled Date: ${new Date(scheduled_date).toDateString()}.`}`;
 
                 try {
-                    await sendTextEmail(
-                        user.email,
-                        subject,
-                        body
-                    );
+                    await sendTextEmail(user.email, subject, body);
                 } catch (emailErr) {
-                    console.error("📧 ASYNC Email failed (Client was already notified):", emailErr.message);
+                    console.error("📧 Email failed:", emailErr.message);
                 }
             })();
         }

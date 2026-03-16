@@ -19,7 +19,8 @@ import {
     FaMoneyBillWave,
     FaTruckMoving,
     FaMapMarkerAlt,
-    FaPhoneAlt
+    FaPhoneAlt,
+    FaHome
 } from "react-icons/fa";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -251,7 +252,12 @@ const Products = () => {
                     image: item.image
                 })),
                 totalAmount,
-                shippingAddress: `${shippingDetails.address}, ${shippingDetails.city}, ${shippingDetails.pincode}`,
+                shippingAddress: {
+                    address: shippingDetails.address,
+                    city: shippingDetails.city,
+                    pincode: shippingDetails.pincode,
+                    phone: shippingDetails.phone || ''
+                },
                 paymentMethod: method,
                 paymentId: paymentId,
                 status: 'pending',
@@ -288,16 +294,27 @@ const Products = () => {
             {/* Navigation */}
             <nav className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <button
-                            onClick={() => navigate(-1)}
-                            className="p-2 hover:bg-emerald-50 rounded-full transition-colors text-emerald-700"
+                            onClick={() => navigate("/dashboard")}
+                            className="p-2.5 hover:bg-emerald-50 rounded-xl transition-all text-emerald-700 flex items-center gap-2 group border border-emerald-50"
+                            title="Back to Dashboard"
                         >
-                            <FaArrowLeft size={20} />
+                            <FaArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                            <span className="hidden sm:inline font-bold text-xs uppercase tracking-widest">Dashboard</span>
                         </button>
+                        <button
+                            onClick={() => navigate("/")}
+                            className="p-2.5 hover:bg-emerald-50 rounded-xl transition-all text-emerald-700 flex items-center gap-2 group border border-emerald-50"
+                            title="Go to Home"
+                        >
+                            <FaHome size={18} />
+                            <span className="hidden sm:inline font-bold text-xs uppercase tracking-widest">Home</span>
+                        </button>
+                        <div className="h-6 w-px bg-emerald-100 mx-1" />
                         <div className="flex items-center gap-2">
                             <FaLeaf className="text-emerald-600 text-2xl" />
-                            <span className="text-2xl font-black text-emerald-950 tracking-tighter uppercase">
+                            <span className="text-2xl font-black text-emerald-950 tracking-tighter uppercase hidden lg:inline">
                                 EcoMarket
                             </span>
                         </div>
@@ -424,14 +441,6 @@ const Products = () => {
                                                         Points Eligible
                                                     </span>
                                                 )}
-                                            </div>
-                                            <div className="absolute inset-0 bg-emerald-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                <button
-                                                    onClick={() => navigate(`/product-details/${product._id}`)}
-                                                    className="px-6 py-3 bg-white text-emerald-950 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-all"
-                                                >
-                                                    View Details
-                                                </button>
                                             </div>
                                         </div>
 

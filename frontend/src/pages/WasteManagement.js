@@ -90,15 +90,7 @@ const WasteManagement = () => {
     const [isPredicting, setIsPredicting] = useState(false);
     // -----------------------------
 
-    const [wardCategoryAssignments, setWardCategoryAssignments] = useState(() => {
-        try {
-            const storedAssignments = localStorage.getItem(ASSIGNMENTS_STORAGE_KEY);
-            return storedAssignments ? JSON.parse(storedAssignments) : {};
-        } catch (error) {
-            console.error("Error reading assignments from localStorage:", error);
-            return {};
-        }
-    });
+    const [wardCategoryAssignments, setWardCategoryAssignments] = useState({});
 
     const [wardNumber, setWardNumber] = useState("");
     const [collectorId, setCollectorId] = useState("");
@@ -115,59 +107,60 @@ const WasteManagement = () => {
 
     const fetchData = useCallback(async () => {
         const authHeaders = getAuthHeaders();
+        const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
+        console.log("🔄 Synchronizing Admin Data...");
+
+        // Helper to fetch data safely
+        const safeFetch = async (url, setter, extractor) => {
+            try {
+                const res = await axios.get(url, authHeaders);
+                setter(extractor ? extractor(res.data) : res.data);
+            } catch (err) {
+                console.warn(`⚠️ Failed to fetch from ${url}:`, err.message);
+            }
+        };
 
         try {
-            // 1. Fetch USERS (users + collectors)
-            const resUsers = await axios.get("http://localhost:4321/api/user/viewusers", authHeaders);
-            const userAndCollectorData = resUsers.data.data || resUsers.data || [];
-
-            // 2. Classify and filter the retrieved list:
-            const classifiedAllUsers = userAndCollectorData.map(user => ({
-                ...user,
-                activityStatus: user.role?.toLowerCase() === 'user'
-                    ? classifyUserActivity(user)
-                    : 'N/A'
+            const resUsers = await axios.get(`${API_BASE}/user/viewusers`, authHeaders);
+            const rawData = resUsers.data.data || resUsers.data || [];
+            const classified = rawData.map(u => ({
+                ...u,
+                activityStatus: u.role?.toLowerCase() === 'user' ? classifyUserActivity(u) : 'N/A'
             }));
+            setUsers(classified.filter(u => u.role?.toLowerCase() === "user"));
+            setCollectors(classified.filter(u => u.role?.toLowerCase() === "collector"));
+        } catch (err) { console.error("❌ Users Fetch Error:", err.message); }
 
-            const fetchedUsers = classifiedAllUsers.filter(u => u.role?.toLowerCase() === "user");
-            const fetchedCollectors = classifiedAllUsers.filter(u => u.role?.toLowerCase() === "collector");
-
-            setUsers(fetchedUsers);
-            setCollectors(fetchedCollectors);
-
-            // Fetching ONLY Pending Applications
-            const resApplies = await axios.get("http://localhost:4321/api/user/collector-applications", authHeaders);
-            const fetchedApplies = resApplies.data.applications || [];
-            setCollectorApplies(fetchedApplies);
-
-            // Fetch Categories
-            const resCats = await axios.get("http://localhost:4321/api/category/categories", authHeaders);
-            const mappedCategories = (resCats.data.categories || resCats.data || []).map(c => {
-                let name = c.name;
-                return { ...c, name };
+        // 2. Fetch Assignments (Source of Truth)
+        try {
+            const res = await axios.get(`${API_BASE}/user/collector-assignments`, authHeaders);
+            const list = res.data.assignments || [];
+            const map = {};
+            list.forEach(a => {
+                if (a.wardNumber && a.collectorId) {
+                    map[String(a.wardNumber).trim()] = a.collectorId._id || a.collectorId;
+                }
             });
-            setCategories(mappedCategories);
+            setWardCategoryAssignments(map);
+            console.log("✅ Assignments Sync:", Object.keys(map).length, "wards");
+        } catch (err) { console.error("❌ Assignments Fetch Error:", err.message); }
 
-            // Fetch Waste Submissions
-            const resSubs = await axios.get("http://localhost:4321/api/user/viewsubmissions", authHeaders);
-            const fetchedWasteSubmissions = (resSubs.data.submissions || resSubs.data || []).map(s => ({
-                ...s,
-                pendingReason: s.pendingReason || ''
-            }));
-            setWasteSubmissions(fetchedWasteSubmissions);
+        // 3. Fetch Other Data independently
+        await safeFetch(`${API_BASE}/user/view-applications`, setCollectorApplies, d => d);
 
+        await safeFetch(`${API_BASE}/category/categories`, setCategories, d => (d.categories || d || []));
 
-            // Initialize manualCollectorId state
+        try {
+            const resSubs = await axios.get(`${API_BASE}/user/viewsubmissions`, authHeaders);
+            const subs = (resSubs.data.submissions || resSubs.data || []).map(s => ({ ...s, pendingReason: s.pendingReason || '' }));
+            setWasteSubmissions(subs);
+
+            // Sync manual lookup for immediate pickups
             const initialManualIds = {};
-            fetchedWasteSubmissions.filter(s => s.weight && !s.collector_id).forEach(s => {
-                initialManualIds[s._id] = ""; // Initialize unassigned immediate pickups to an empty string
-            });
+            subs.filter(s => s.weight && !s.collector_id).forEach(s => { initialManualIds[s._id] = ""; });
             setManualCollectorId(initialManualIds);
+        } catch (err) { console.error("❌ Submissions Fetch Error:", err.message); }
 
-
-        } catch (err) {
-            console.error("Error fetching data:", err.response?.data || err.message);
-        }
     }, [getAuthHeaders]);
 
     // 🟢 UPDATED: This function is now set up to handle the new backend response structure.
@@ -175,8 +168,9 @@ const WasteManagement = () => {
         setIsPredicting(true);
         setWastePredictions({ month: "", predictions: [] });
         const authHeaders = getAuthHeaders();
+        const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
 
-        const predictionUrl = `http://localhost:4321/api/user/predict-next-month`;
+        const predictionUrl = `${API_BASE}/user/predict-next-month`;
 
         try {
             const res = await axios.get(predictionUrl, authHeaders);
@@ -213,19 +207,13 @@ const WasteManagement = () => {
         fetchData();
     }, [fetchData]);
 
-    // Effect to save assignments to localStorage
-    useEffect(() => {
-        try {
-            localStorage.setItem(ASSIGNMENTS_STORAGE_KEY, JSON.stringify(wardCategoryAssignments));
-        } catch (error) {
-            console.error("Error writing assignments to localStorage:", error);
-        }
-    }, [wardCategoryAssignments]);
+    // Handled by fetchData from DB
 
     const updateWasteSubmissionStatus = async (id, newStatus) => {
         try {
+            const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
             const res = await axios.put(
-                `http://localhost:4321/api/user/updatestatus/${id}`,
+                `${API_BASE}/user/updatestatus/${id}`,
                 { status: newStatus },
                 getAuthHeaders()
             );
@@ -246,16 +234,18 @@ const WasteManagement = () => {
             return;
         }
 
-        const collectorName = collectors.find(c => c._id === collectorId)?.name || "a collector";
+        const collectorObj = collectors.find(c => String(c._id) === String(collectorId));
+        const collectorName = collectorObj?.name || "a collector";
 
         if (!window.confirm(`Are you sure you want to assign ${collectorName} to this urgent pickup?`)) {
             return;
         }
 
         try {
+            const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
             // Call the new backend route, passing the collectorId AND setting the status to 'approved'
             await axios.put(
-                `http://localhost:4321/api/user/assign-to-submission/${submissionId}`,
+                `${API_BASE}/user/assign-to-submission/${submissionId}`,
                 { collectorId, status: "approved" },
                 getAuthHeaders()
             );
@@ -290,9 +280,10 @@ const WasteManagement = () => {
         if (!application || !window.confirm(`Are you sure you want to approve ${application.name} as a collector?`)) return;
 
         try {
+            const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
             // 1. Send approval request to backend
             await axios.post(
-                `http://localhost:4321/api/user/approve-application/${appId}`,
+                `${API_BASE}/user/approve-collector/${appId}`,
                 // Sending the required data, although the backend mostly relies on the ID
                 { name: application.name, email: application.email, phone: application.phone, address: application.address },
                 getAuthHeaders()
@@ -318,8 +309,10 @@ const WasteManagement = () => {
         if (!window.confirm("Are you sure you want to reject this collector application? This will delete the application record.")) return;
 
         try {
-            await axios.delete(
-                `http://localhost:4321/api/user/reject-application/${appId}`,
+            const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
+            await axios.post(
+                `${API_BASE}/user/reject-collector/${appId}`,
+                { adminRemarks: "Application rejected by admin" },
                 getAuthHeaders()
             );
 
@@ -334,6 +327,7 @@ const WasteManagement = () => {
             alert(`Failed to reject collector apply: ${err.response?.data?.message || 'Check network and backend implementation.'}`);
         }
     };
+
 
     const approveAllNewWasteSubmissions = async () => {
         const newSubmissionIds = wasteSubmissions
@@ -378,7 +372,7 @@ const WasteManagement = () => {
         }
     };
 
-    const newAppliesCount = collectorApplies.length;
+    const newAppliesCount = collectorApplies.filter(a => a.status?.toLowerCase() === 'pending').length;
 
     const newWasteSubmissionsCount = wasteSubmissions.filter(s =>
         s.status?.toLowerCase() === "new" || s.status?.toLowerCase() === "unhandled"
@@ -397,43 +391,27 @@ const WasteManagement = () => {
     const immediatePickupCount = immediatePickups.length;
     // END MODIFIED FILTER
 
-    const deleteAssignment = async (ward, categoryId, collectorName) => {
-        if (!window.confirm(`Are you sure you want to remove the assignment of ${collectorName} from Ward ${ward} for this category? This action cannot be undone.`)) {
+    const deleteAssignment = async (ward, collectorName) => {
+        if (!window.confirm(`Are you sure you want to remove ${collectorName} from Ward ${ward}?`)) {
             return;
         }
 
-        const assignmentKey = `${String(ward)}-${categoryId}`;
-        let successfullyDeletedOnBackend = false;
-
         try {
-            await axios.post(
-                "http://localhost:4321/api/user/unassign",
-                { wardNumber: ward, categoryId },
+            const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
+            const res = await axios.post(
+                `${API_BASE}/user/unassign`,
+                { wardNumber: ward },
                 getAuthHeaders()
             );
-            successfullyDeletedOnBackend = true;
+
+            // Re-fetch data from backend to ensure state is perfectly in sync
+            await fetchData();
+            alert(res.data.message || `✅ Collector removed from Ward ${ward}.`);
 
         } catch (err) {
-            const status = err.response?.status;
-
-            if (status === 404 || status === 400) {
-                console.warn(`[Unassign Info] Server responded with status ${status}. Assuming assignment is already cleared from DB.`);
-                successfullyDeletedOnBackend = true;
-            } else {
-                console.error(err.response?.data || err);
-                alert(err.response?.data?.message || "❌ A critical error occurred. Failed to contact server.");
-                return;
-            }
-        }
-
-        if (successfullyDeletedOnBackend) {
-            setWardCategoryAssignments(prev => {
-                const newAssignments = { ...prev };
-                delete newAssignments[assignmentKey];
-                return newAssignments;
-            });
-
-            alert(`✅ Assignment for Ward ${ward} / ${categories.find(c => c._id === categoryId)?.name || 'Category'} successfully removed from the system.`);
+            console.error("Unassign Error:", err.response?.data || err.message);
+            const errorMsg = err.response?.data?.message || err.message;
+            alert(`❌ Failed to remove assignment: ${errorMsg}`);
         }
     };
 
@@ -461,18 +439,15 @@ const WasteManagement = () => {
 
     // --- CORE LOGIC: Generate Current Collector Assignments List ---
     const currentAssignmentsMap = {};
-    Object.entries(wardCategoryAssignments).forEach(([key, collector_id]) => {
-        const [ward, categoryId] = key.split('-');
-        const collectorObj = collectors.find(c => c._id === collector_id);
-        const categoryObj = categories.find(c => c._id === categoryId);
+    Object.entries(wardCategoryAssignments).forEach(([ward, collector_id]) => {
+        // Robust ID comparison
+        const collectorObj = collectors.find(c => String(c._id) === String(collector_id));
 
-        if (ward && categoryObj && collectorObj) {
-            currentAssignmentsMap[key] = {
+        if (ward) {
+            currentAssignmentsMap[ward] = {
                 ward,
-                categoryId: categoryObj._id,
                 collectorId: collector_id,
-                category: categoryObj.name,
-                collectorName: collectorObj.name,
+                collectorName: collectorObj ? collectorObj.name : "Unknown Collector",
                 activeSubmissionsCount: 0,
             };
         }
@@ -482,19 +457,16 @@ const WasteManagement = () => {
         .filter(s => s.status?.toLowerCase() !== "collected")
         .forEach(s => {
             const ward = String(s.user_id?.wardNumber);
-            // Must find the category by name and then map to ID
-            const category = categories.find(c => c.name === s.category);
-            const categoryId = category?._id;
-            const key = `${ward}-${categoryId}`;
-
-            if (currentAssignmentsMap[key]) {
-                currentAssignmentsMap[key].activeSubmissionsCount++;
+            if (currentAssignmentsMap[ward]) {
+                currentAssignmentsMap[ward].activeSubmissionsCount++;
             }
         });
 
-    const currentAssignmentsList = Object.values(currentAssignmentsMap).sort((a, b) =>
-        a.ward.localeCompare(b.ward) || a.category.localeCompare(b.category)
-    );
+    const currentAssignmentsList = Object.values(currentAssignmentsMap).sort((a, b) => {
+        const wardA = parseInt(a.ward) || 0;
+        const wardB = parseInt(b.ward) || 0;
+        return wardA - wardB;
+    });
     // --- END CORE LOGIC ---
 
     // 🟢 UPDATED: Get the chart data and unique categories needed for the Bar chart
@@ -579,7 +551,7 @@ const WasteManagement = () => {
                     className={`w-full text-left px-3 py-2 mb-4 rounded-xl font-medium transition-transform transform hover:scale-[1.02] ${buttonBase} flex items-center gap-3`}
                 >
                     <FaHome className="text-lg text-red-500" />
-                    🏡 
+                    🏡
                 </button>
 
                 {/* ** APPROVE WASTE SUBMISSIONS BUTTON (Vibrant Green) ** */}
@@ -602,11 +574,10 @@ const WasteManagement = () => {
                         <button
                             key={item.key}
                             onClick={() => setActiveTab(item.key)}
-                            className={`w-full text-left px-3 py-2 rounded-lg font-medium transition-colors flex items-center justify-between gap-2 ${
-                                activeTab === item.key
-                                    ? `bg-indigo-100 ${primaryColor} font-bold shadow-sm ${isDark ? "bg-indigo-900/50" : ""}`
-                                    : isDark ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-100"
-                            }`}
+                            className={`w-full text-left px-3 py-2 rounded-lg font-medium transition-colors flex items-center justify-between gap-2 ${activeTab === item.key
+                                ? `bg-indigo-100 ${primaryColor} font-bold shadow-sm ${isDark ? "bg-indigo-900/50" : ""}`
+                                : isDark ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-100"
+                                }`}
                         >
                             <span className="flex items-center gap-3">
                                 <item.icon className={`text-lg ${item.iconColor}`} />
@@ -774,13 +745,21 @@ const WasteManagement = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
-                                        {collectors.map(c => (
-                                            <tr key={c._id} className={isDark ? "hover:bg-gray-700" : "hover:bg-purple-50/50"}>
-                                                <td className="px-6 py-3 font-medium">{c.name}</td>
-                                                <td className="px-6 py-3 text-sm">{c.email}</td>
-                                                <td className="px-6 py-3 text-sm">{c.phone || "-"}</td>
+                                        {collectors.length > 0 ? (
+                                            collectors.map(c => (
+                                                <tr key={c._id} className={isDark ? "hover:bg-gray-700" : "hover:bg-purple-50/50"}>
+                                                    <td className="px-6 py-3 font-medium">{c.name}</td>
+                                                    <td className="px-6 py-3 text-sm">{c.email}</td>
+                                                    <td className="px-6 py-3 text-sm">{c.phone || "-"}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="3" className="text-center px-6 py-4 text-lg text-gray-500 font-medium">
+                                                    No collectors registered yet.
+                                                </td>
                                             </tr>
-                                        ))}
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -835,9 +814,8 @@ const WasteManagement = () => {
                                                         <button
                                                             onClick={() => assignCollectorToSubmission(s._id, manualCollectorId[s._id])}
                                                             disabled={!manualCollectorId[s._id]}
-                                                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-md ${
-                                                                manualCollectorId[s._id] ? `${primaryBg} text-white ${hoverPrimaryBg}` : "bg-gray-400 text-gray-700 cursor-not-allowed"
-                                                            }`}
+                                                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-md ${manualCollectorId[s._id] ? `${primaryBg} text-white ${hoverPrimaryBg}` : "bg-gray-400 text-gray-700 cursor-not-allowed"
+                                                                }`}
                                                         >
                                                             Assign
                                                         </button>
@@ -869,12 +847,13 @@ const WasteManagement = () => {
                                             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Name / Contact</th>
                                             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Address</th>
                                             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Applied Date</th>
+                                            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Status</th>
                                             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
-                                        {collectorApplies.length > 0 ? (
-                                            collectorApplies.map(c => (
+                                        {collectorApplies.filter(c => c.status?.toLowerCase() === 'pending').length > 0 ? (
+                                            collectorApplies.filter(c => c.status?.toLowerCase() === 'pending').map(c => (
                                                 <tr key={c._id} className={isDark ? "hover:bg-gray-700" : "hover:bg-pink-50/50"}>
                                                     <td className="px-6 py-3">
                                                         <p className="font-medium">{c.name || "-"}</p>
@@ -883,19 +862,31 @@ const WasteManagement = () => {
                                                     </td>
                                                     <td className="px-6 py-3 text-sm">{c.address || "-"}</td>
                                                     <td className="px-6 py-3 text-sm text-pink-500 font-semibold">{new Date(c.createdAt).toLocaleDateString()}</td>
+                                                    <td className="px-6 py-3">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-extrabold shadow-sm ${c.status?.toLowerCase() === 'pending' ? 'bg-yellow-400 text-yellow-900 animate-pulse' :
+                                                            c.status?.toLowerCase() === 'approved' ? 'bg-green-500 text-white' :
+                                                                'bg-red-500 text-white'
+                                                            }`}>
+                                                            {c.status || "Pending"}
+                                                        </span>
+                                                    </td>
                                                     <td className="px-6 py-3 flex gap-3">
-                                                        <button
-                                                            onClick={() => approveCollectorApply(c._id, c)}
-                                                            className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors shadow-md"
-                                                        >
-                                                            Approve
-                                                        </button>
-                                                        <button
-                                                            onClick={() => rejectCollectorApply(c._id)}
-                                                            className="px-3 py-1 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors shadow-md"
-                                                        >
-                                                            Reject
-                                                        </button>
+                                                        {c.status?.toLowerCase() === 'pending' && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => approveCollectorApply(c._id, c)}
+                                                                    className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors shadow-md"
+                                                                >
+                                                                    Approve
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => rejectCollectorApply(c._id)}
+                                                                    className="px-3 py-1 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors shadow-md"
+                                                                >
+                                                                    Reject
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))
@@ -936,9 +927,8 @@ const WasteManagement = () => {
                                                     <td className="px-6 py-3 text-sm">{`W: ${s.user_id?.wardNumber || "-"} / H: ${s.user_id?.houseNumber || "-"}`}</td>
                                                     <td className="px-6 py-3 text-sm">{new Date(s.scheduled_date).toLocaleDateString()}</td>
                                                     <td className="px-6 py-3">
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                            (s.status?.toLowerCase() === 'new' || s.status?.toLowerCase() === 'unhandled') ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
-                                                        }`}>
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${(s.status?.toLowerCase() === 'new' || s.status?.toLowerCase() === 'unhandled') ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                                                            }`}>
                                                             {s.status.charAt(0).toUpperCase() + s.status.slice(1)}
                                                         </span>
                                                     </td>
@@ -960,7 +950,7 @@ const WasteManagement = () => {
                     {/* Schedules Tab (Enhanced Card View) */}
                     {activeTab === "schedules" && (
                         <div>
-                            <h3 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><FaCalendarAlt className="text-orange-500"/> Active Collection Schedules</h3>
+                            <h3 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><FaCalendarAlt className="text-orange-500" /> Active Collection Schedules</h3>
 
                             <div className="flex flex-wrap gap-4 mb-6">
                                 {/* Category filter */}
@@ -1018,11 +1008,11 @@ const WasteManagement = () => {
                                             <p className="font-extrabold text-lg truncate mb-1">{s.user_id?.name || "Anonymous User"}</p>
                                             <p className="text-sm text-gray-500 mb-2">Ward **{s.user_id?.wardNumber || "-"}** / House **{s.user_id?.houseNumber || "-"}**</p>
                                             <p className="text-md font-semibold text-indigo-500">
-                                                <FaTruck className="inline mr-2"/> {s.collector_id?.name || "Unassigned"}
+                                                <FaTruck className="inline mr-2" /> {s.collector_id?.name || "Unassigned"}
                                             </p>
                                             {s.weight && (
                                                 <p className="text-sm text-red-500 font-bold mt-1">
-                                                    <FaBolt className="inline mr-1"/> Urgent Pickup: {s.weight} kg
+                                                    <FaBolt className="inline mr-1" /> Urgent Pickup: {s.weight} kg
                                                 </p>
                                             )}
                                         </div>
@@ -1040,7 +1030,15 @@ const WasteManagement = () => {
                     {/* Assign Collector Tab (Enhanced UI) */}
                     {activeTab === "Assign collector" && (
                         <div>
-                            <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><FaTools className="text-indigo-500"/> Assign Collector to Zone</h2>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-extrabold flex items-center gap-2"><FaTools className="text-indigo-500" /> Assign Collector to Zone</h2>
+                                <button
+                                    onClick={fetchData}
+                                    className={`px-4 py-1.5 rounded-lg text-sm font-bold border transition-all ${isDark ? "border-gray-600 hover:bg-gray-700" : "border-gray-300 hover:bg-gray-50"}`}
+                                >
+                                    🔄 Refresh Data
+                                </button>
+                            </div>
 
                             {/* ASSIGNMENT FORM */}
                             <div className={`p-8 rounded-2xl shadow-xl mb-8 border-t-4 border-indigo-500 ${isDark ? "bg-gray-800" : "bg-white"}`}>
@@ -1049,84 +1047,51 @@ const WasteManagement = () => {
                                     onSubmit={async (e) => {
                                         e.preventDefault();
 
-                                        const categoryObj = categories.find(c => c._id === selectedCategory);
-                                        const collectorObj = collectors.find(c => c._id === collectorId);
+                                        const collectorObj = collectors.find(c => String(c._id) === String(collectorId));
 
-                                        if (!wardNumber || !categoryObj || !collectorObj) {
-                                            alert("Please select a valid Ward Number, Category, and Collector.");
+                                        if (!wardNumber || !collectorObj) {
+                                            alert("Please select a valid Ward Number and Collector.");
                                             return;
                                         }
 
                                         const targetWardString = String(wardNumber);
-                                        const assignmentKey = `${targetWardString}-${selectedCategory}`;
-
-                                        const currentCollectorId = wardCategoryAssignments[assignmentKey];
+                                        const currentCollectorId = wardCategoryAssignments[targetWardString];
 
                                         // 1. --- Overwrite Confirmation Logic ---
                                         if (currentCollectorId && currentCollectorId !== collectorId) {
-                                            const currentCollector = collectors.find(c => c._id === currentCollectorId);
+                                            const currentCollector = collectors.find(c => String(c._id) === String(currentCollectorId));
                                             const confirmOverwrite = window.confirm(
-                                                `⚠️ WARNING: Ward ${targetWardString} for ${categoryObj.name} is currently assigned to ${currentCollector.name}. Do you want to OVERWRITE this assignment?`
+                                                `⚠️ WARNING: Ward ${targetWardString} is currently assigned to ${currentCollector.name}. Do you want to OVERWRITE this assignment?`
                                             );
                                             if (!confirmOverwrite) return;
-                                        } else if (currentCollectorId === collectorId) {
-                                            const existingGlobalAssignment = Object.keys(wardCategoryAssignments).find(key => {
-                                                const [ward, catId] = key.split('-');
-                                                return String(ward) === targetWardString &&
-                                                    wardCategoryAssignments[key] === collectorId &&
-                                                    catId !== selectedCategory;
-                                            });
-
-                                            if (!existingGlobalAssignment) {
-                                                alert(`Collector ${collectorObj.name} is already assigned to Ward ${targetWardString} for ${categoryObj.name}. No change was made.`);
-                                                return;
-                                            }
                                         }
-                                        // -----------------------------------------------------------------
 
                                         try {
+                                            const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
+                                            console.log(`📤 Assigning ${collectorObj.name} to Ward ${targetWardString}...`);
                                             // 2. Send assignment to backend
                                             await axios.post(
-                                                "http://localhost:4321/api/user/assign",
-                                                { wardNumber, categoryId: selectedCategory, collectorId },
+                                                `${API_BASE}/user/assign`,
+                                                { wardNumber: targetWardString, collectorId },
                                                 getAuthHeaders()
                                             );
 
-                                            // 3. --- Frontend State Update Logic to Mirror Backend Action (NEW RULE) ---
-                                            setWardCategoryAssignments(prev => {
-                                                let newAssignments = { ...prev };
+                                            // 3. Re-fetch all data to ensure perfect sync
+                                            await fetchData();
 
-                                                const keysToRemove = Object.keys(newAssignments).filter(key => {
-                                                    const [ward, catId] = key.split('-');
-                                                    return String(ward) === targetWardString &&
-                                                        newAssignments[key] === collectorId &&
-                                                        catId !== selectedCategory;
-                                                });
-
-                                                keysToRemove.forEach(key => {
-                                                    delete newAssignments[key];
-                                                });
-
-                                                newAssignments[assignmentKey] = collectorId;
-
-                                                return newAssignments;
-                                            });
-                                            // --- END Frontend State Update Logic ---
-
-                                            alert(`✅ ${collectorObj.name} successfully assigned to Ward ${targetWardString} for ${categoryObj.name}. The collector's previous category assignment in this ward, if any, was removed.`);
+                                            alert(`✅ ${collectorObj.name} successfully assigned to Ward ${targetWardString}.`);
 
                                             // Clear form
                                             setWardNumber("");
                                             setCollectorId("");
-                                            setSelectedCategory("");
 
                                         } catch (err) {
-                                            console.error(err.response?.data || err);
+                                            console.error("❌ Assignment POST Error:", err.response?.data || err.message);
                                             alert(err.response?.data?.message || "❌ Failed to assign collector");
                                         }
                                     }}
                                 >
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                         <div className="mb-2">
                                             <label className="block font-semibold mb-2">Ward Number</label>
                                             <input
@@ -1137,23 +1102,6 @@ const WasteManagement = () => {
                                                 required
                                                 min="1"
                                             />
-                                        </div>
-
-                                        <div className="mb-2">
-                                            <label className="block font-semibold mb-2">Category</label>
-                                            <select
-                                                value={selectedCategory}
-                                                onChange={(e) => setSelectedCategory(e.target.value)}
-                                                className={`w-full px-4 py-2 border rounded-lg shadow-inner ${isDark ? "bg-gray-700 text-white border-gray-600" : "border-gray-300"}`}
-                                                required
-                                            >
-                                                <option value="">Select Category</option>
-                                                {categories.map((c) => (
-                                                    <option key={c._id} value={c._id}>
-                                                        {c.name}
-                                                    </option>
-                                                ))}
-                                            </select>
                                         </div>
 
                                         <div className="mb-2">
@@ -1191,7 +1139,6 @@ const WasteManagement = () => {
                                     <thead className={isDark ? "bg-gray-700" : "bg-indigo-100"}>
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Ward Number</th>
-                                            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Category</th>
                                             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Assigned Collector</th>
                                             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Active Submissions</th>
                                             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Action</th>
@@ -1199,16 +1146,14 @@ const WasteManagement = () => {
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
                                         {currentAssignmentsList.map((assignment, index) => (
-                                            <tr key={`${assignment.ward}-${assignment.category}`} className={isDark ? "hover:bg-gray-700" : "hover:bg-indigo-50/50"}>
+                                            <tr key={assignment.ward} className={isDark ? "hover:bg-gray-700" : "hover:bg-indigo-50/50"}>
                                                 <td className="px-6 py-3 font-semibold">{assignment.ward}</td>
-                                                <td className="px-6 py-3">{assignment.category}</td>
                                                 <td className="px-6 py-3 font-bold text-indigo-500">{assignment.collectorName}</td>
                                                 <td className="px-6 py-3 text-center font-medium">{assignment.activeSubmissionsCount}</td>
                                                 <td className="px-6 py-3">
                                                     <button
                                                         onClick={() => deleteAssignment(
                                                             assignment.ward,
-                                                            assignment.categoryId,
                                                             assignment.collectorName
                                                         )}
                                                         className="px-3 py-1 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors shadow-md"
@@ -1220,8 +1165,8 @@ const WasteManagement = () => {
                                         ))}
                                         {currentAssignmentsList.length === 0 && (
                                             <tr>
-                                                <td colSpan="5" className="text-center px-6 py-4 text-lg text-gray-500 font-medium">
-                                                    No active Ward/Category assignments found.
+                                                <td colSpan="4" className="text-center px-6 py-4 text-lg text-gray-500 font-medium">
+                                                    No active Ward assignments found.
                                                 </td>
                                             </tr>
                                         )}
@@ -1247,9 +1192,8 @@ const WasteManagement = () => {
                             <button
                                 onClick={fetchWastePredictions}
                                 disabled={isPredicting}
-                                className={`px-6 py-2 mb-8 rounded-lg font-bold text-lg transition-colors shadow-lg ${
-                                    isPredicting ? "bg-gray-500 text-white cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"
-                                } transform hover:scale-[1.01]`}
+                                className={`px-6 py-2 mb-8 rounded-lg font-bold text-lg transition-colors shadow-lg ${isPredicting ? "bg-gray-500 text-white cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"
+                                    } transform hover:scale-[1.01]`}
                             >
                                 {isPredicting ? (
                                     <span className="flex items-center">

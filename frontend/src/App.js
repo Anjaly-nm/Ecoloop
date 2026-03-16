@@ -36,6 +36,7 @@ import UserManage from "./pages/UserManage";
 import ShopManagement from "./pages/ShopManagement";
 import SystemReports from "./pages/SystemReports";
 import AssignDeliveryBoy from "./pages/AssignDeliveryBoy"; // ✅ Added new import
+import SmartBinMonitor from "./pages/SmartBinMonitor"; // ✅ Added Smart Bin Monitor
 
 // ✅ Collector Page
 import Collector from "./pages/Collector";
@@ -96,6 +97,7 @@ function App() {
           <Route path="/admin/SystemReports" element={<SystemReports />} />
           <Route path="/admin/applications" element={<Applications />} /> {/* ✅ Added new route */}
           <Route path="/admin/assign-delivery-boy" element={<AssignDeliveryBoy />} /> {/* ✅ Added new route for Assign Delivery Boy */}
+          <Route path="/admin/smart-bin-monitor" element={<SmartBinMonitor />} /> {/* ✅ Added Smart Bin Monitor route */}
 
           {/* Collector Route */}
           <Route path="/collector" element={<Collector />} />

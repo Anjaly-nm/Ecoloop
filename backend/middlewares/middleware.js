@@ -58,9 +58,14 @@ module.exports = {
 
   isCollector: async (req, res, next) => {
     const { user, error } = await verifyToken(req);
-    if (error) return res.status(error.status).json({ message: error.message, detail: error.detail });
+    if (error) {
+      console.error("isCollector Middleware Error:", error);
+      return res.status(error.status).json({ message: error.message, detail: error.detail });
+    }
 
+    console.log(`isCollector: User ${user.name} Role: ${user.role}`);
     if (user.role.toLowerCase() !== 'collector') {
+      console.warn(`isCollector: Access denied for role ${user.role}`);
       return res.status(403).json({ message: 'Access denied. Collectors only.' });
     }
 

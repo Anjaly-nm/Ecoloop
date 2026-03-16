@@ -14,6 +14,7 @@ router.get('/analytics', isCollector, async (req, res) => {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
+        console.log(`🔗 Analytics requested for collector: ${collectorId}`);
         const stats = await Pickup.aggregate([
             { $match: { collector_id: new mongoose.Types.ObjectId(collectorId) } },
             {
@@ -27,6 +28,7 @@ router.get('/analytics', isCollector, async (req, res) => {
             }
         ]);
 
+        console.log(`📊 Analytics Stats Found:`, JSON.stringify(stats[0]));
         const result = stats[0] || { total: 0, collected: 0, pending: 0, monthly: 0 };
         const completionRate = result.total > 0 ? (result.collected / result.total) * 100 : 0;
 

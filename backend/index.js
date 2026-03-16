@@ -59,6 +59,7 @@ const leaveApplicationRoutes = require('./routes/leaveApplications'); // ✅ Add
 // Import Firebase Admin for testing
 const { auth: firebaseAuth } = require('./firebaseAdmin');
 
+
 // -----------------------------------------------------------------
 // MIDDLEWARES - APPLYING FIXES HERE
 // -----------------------------------------------------------------
@@ -124,6 +125,32 @@ app.get('/test-firebase', async (req, res) => {
 // STATIC FILE SERVING (Already correct)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// MongoDB connection — start early and wait before API routes (fixes 500 on Vercel serverless)
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://anjalinm03:anjaly2003@cluster0.pjjiizq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const mongoosePromise = mongoose.connect(MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+})
+  .then(() => { console.log('✅ DATABASE CONNECTED SUCCESSFULLY'); })
+  .catch(err => {
+    console.error('❌ Error connecting to database');
+    console.error('Error details:', err);
+    throw err;
+  });
+
+// Ensure DB is connected before handling API requests (prevents 500 on cold start)
+app.use('/api', async (req, res, next) => {
+  try {
+    await mongoosePromise;
+    next();
+  } catch (err) {
+    console.error('DB not ready:', err.message);
+    res.status(503).json({ message: 'Service temporarily unavailable. Please retry.' });
+  }
+});
+
 // Routes (unchanged)
 app.use('/api/user', registerRoutes);
 app.use('/api/user', loginRoutes);
@@ -150,28 +177,7 @@ app.use('/api/leave-applications', leaveApplicationRoutes); // ✅ Added leave a
 app.use('/api/messages', require('./routes/messages')); // ✅ Added messages route
 app.use('/api/salary', require('./routes/salary')); // ✅ Added salary route
 app.use('/api/collector-dashboard', require('./routes/collectorDashboard')); // ✅ Added collector dashboard route
-
-// MongoDB connection (unchanged)
-mongoose
-  .connect('mongodb+srv://anjalinm03:anjaly2003@cluster0.pjjiizq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 30000,
-    socketTimeoutMS: 45000,
-  })
-  .then(() => console.log('✅ DATABASE CONNECTED SUCCESSFULLY'))
-  .catch(err => {
-    console.error('❌ Error connecting to database');
-    console.error('Error details:', err);
-    if (err.name === 'MongooseServerSelectionError') {
-      console.error('This is typically caused by one of the following:');
-      console.error('1. Your IP address is not whitelisted in MongoDB Atlas');
-      console.error('2. Incorrect username or password');
-      console.error('3. Network connectivity issues');
-      console.error('4. The MongoDB Atlas cluster is paused or not available');
-      console.error('Please check your MongoDB Atlas dashboard for more information.');
-    }
-  });
+app.use('/api/iot', require('./routes/iotRoutes')); // ✅ Added IoT routes
 
 // Handle 404 (unchanged)
 app.use((req, res) => {

@@ -33,4 +33,4 @@ try {
   console.warn('⚠️ Firebase init skipped:', err.message);
 }
 
-module.exports = { auth };
+module.exports = { auth, admin };

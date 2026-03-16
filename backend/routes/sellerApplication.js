@@ -36,16 +36,16 @@ const generateUsername = async (orgName) => {
   const cleanName = orgName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
   const randomNumber = Math.floor(1000 + Math.random() * 9000);
   const baseUsername = `${cleanName}${randomNumber}`;
-  
+
   // Check if username already exists, if so, generate a new one
   let username = baseUsername;
   let counter = 1;
-  
+
   while (await User.exists({ username: username })) {
     username = `${cleanName}${randomNumber}${counter}`;
     counter++;
   }
-  
+
   return username;
 };
 
@@ -74,7 +74,7 @@ router.post("/apply-seller", async (req, res) => {
     // Auto-verify government IDs
     let verificationStatus = "Pending";
     let verificationDetails = "";
-    
+
     if (governmentIdType === "Aadhar" && aadharNumber) { // ✅ Changed from GST to Aadhar
       if (validateAadhar(aadharNumber)) { // ✅ Changed from validateGST to validateAadhar
         verificationStatus = "Verified";
@@ -116,8 +116,8 @@ router.post("/apply-seller", async (req, res) => {
 
     await newApp.save();
 
-    res.status(200).json({ 
-      message: "Seller application submitted successfully!", 
+    res.status(200).json({
+      message: "Seller application submitted successfully!",
       verificationStatus,
       verificationDetails
     });
@@ -163,7 +163,7 @@ router.post("/approve-seller/:id", async (req, res) => {
     // Check if a user with this email already exists
     const existingUser = await User.findOne({ email: application.email });
     if (existingUser) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: "A user with this email already exists. Please use a different email or contact support.",
         error: "Email already exists"
       });
@@ -172,17 +172,17 @@ router.post("/approve-seller/:id", async (req, res) => {
     // Generate credentials
     const username = await generateUsername(application.organizationName);
     const password = generateRandomPassword();
-    
+
     // Hash the password before storing
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    
+
     // Update application
     application.status = "Approved";
     application.generatedUsername = username;
     application.generatedPassword = password;
     application.adminRemarks = req.body.adminRemarks || "Application approved";
-    
+
     await application.save();
 
     // Create seller user account with hashed password
@@ -217,7 +217,7 @@ The Ecoloop Team
     `.trim();
     await sendTextEmail(application.email, 'Ecoloop Seller Account Approved', emailBody);
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Seller application approved successfully! Login credentials have been sent to the seller's email.",
       username: username,
       password: password
@@ -238,7 +238,7 @@ router.post("/reject-seller/:id", async (req, res) => {
 
     application.status = "Rejected";
     application.adminRemarks = req.body.adminRemarks || "Application rejected";
-    
+
     await application.save();
 
     res.status(200).json({ message: "Seller application rejected successfully!" });

@@ -33,12 +33,15 @@ router.get("/", isCollector, async (req, res) => {
       query.scheduled_date = { $gte: startOfToday, $lte: endOfWeekly };
     }
 
+    console.log(`📡 Fetching pickups for collector: ${collectorId} with filter: ${filter}`);
+
     const pickups = await Pickup.find(query)
       .populate("user_id", "name email wardNumber houseNumber")
       .populate("category_id", "name")
       .sort({ scheduled_date: 1 })
       .lean();
 
+    console.log(`✅ Found ${pickups.length} pickups for ${collectorId}`);
     res.status(200).json({ success: true, pickups });
   } catch (err) {
     console.error("Error fetching pickups:", err);

@@ -365,7 +365,7 @@ router.put('/update-status/:orderId', async (req, res) => {
 router.get('/my-deliveries', verifyToken, async (req, res) => {
   try {
     const orders = await Order.find({ deliveryBoyId: req.userId })
-      .populate('userId', 'name email phone wardNumber shippingAddress') // Populate User (customer) details
+      .populate('userId', 'name email phone wardNumber address') // Populate User (customer) details
       .populate({
         path: 'items.productId',
         select: 'name image seller_id',

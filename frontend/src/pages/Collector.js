@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FaSignOutAlt,
   FaSun,
@@ -8,6 +9,7 @@ import {
   FaUserCircle,
   FaCheckCircle,
   FaBolt,
+  FaArrowLeft,
   FaArrowRight,
   FaCalendarAlt,
   FaWeightHanging,
@@ -73,8 +75,12 @@ const CollectorDashboardModern = () => {
   const [notifications, setNotifications] = useState([]);
   const [showMap, setShowMap] = useState(false);
   const [selectedPickupForMap, setSelectedPickupForMap] = useState(null);
+  const [gasWarning, setGasWarning] = useState(null);
 
-  const API_BASE = "http://localhost:4321/api";
+  const API_BASE = window.location.hostname === 'localhost'
+    ? "http://localhost:4321/api"
+    : "/api"; // In production it often proxies or serves on same port
+
   const PICKUPS_API = `${API_BASE}/collector/`;
   const DASHBOARD_API = `${API_BASE}/collector-dashboard`;
 
@@ -119,7 +125,7 @@ const CollectorDashboardModern = () => {
 
   const fetchData = async (silent = false) => {
     if (!silent) setLoading(true);
-    console.log("🔗 Fetching Dashboard Data...");
+    console.log("🔗 Fetching Dashboard Data Parallel...");
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -129,28 +135,56 @@ const CollectorDashboardModern = () => {
       }
       const headers = { token };
 
-      // Fetch Pickups (with filter)
-      const pickupsRes = await axios.get(`${PICKUPS_API}?filter=${scheduleFilter}`, { headers });
-      setPickups(pickupsRes.data.pickups || []);
+      // Use Promise.allSettled to ensure failure of one doesn't block others
+      const [pickupsRes, analyticsRes, earningsRes, notifRes] = await Promise.allSettled([
+        axios.get(`${PICKUPS_API}?filter=${scheduleFilter}`, { headers }),
+        axios.get(`${DASHBOARD_API}/analytics`, { headers }),
+        axios.get(`${DASHBOARD_API}/earnings`, { headers }),
+        axios.get(`${DASHBOARD_API}/notifications`, { headers })
+      ]);
 
-      // Fetch Analytics
-      const analyticsRes = await axios.get(`${DASHBOARD_API}/analytics`, { headers });
-      setAnalytics(analyticsRes.data);
+      if (pickupsRes.status === "fulfilled") {
+        setPickups(pickupsRes.value.data.pickups || []);
+      } else {
+        console.error("❌ Pickups Fetch Failed:", pickupsRes.reason);
+      }
 
-      // Fetch Earnings
-      const earningsRes = await axios.get(`${DASHBOARD_API}/earnings`, { headers });
-      setEarnings(earningsRes.data.earnings);
+      if (analyticsRes.status === "fulfilled") {
+        setAnalytics(analyticsRes.value.data);
+      } else {
+        console.error("❌ Analytics Fetch Failed:", analyticsRes.reason);
+      }
 
-      // Fetch Notifications
-      const notifRes = await axios.get(`${DASHBOARD_API}/notifications`, { headers });
-      setNotifications(notifRes.data.notifications || []);
+      if (earningsRes.status === "fulfilled") {
+        setEarnings(earningsRes.value.data.earnings);
+      } else {
+        console.error("❌ Earnings Fetch Failed:", earningsRes.reason);
+      }
+
+      if (notifRes.status === "fulfilled") {
+        setNotifications(notifRes.value.data.notifications || []);
+      } else {
+        console.warn("⚠️ Notifications Fetch Failed (Soft Failure):", notifRes.reason);
+      }
+
+      // Fetch Gas Data for Safety
+      try {
+        const gasRes = await axios.get(`${API_BASE}/iot/latest-readings`);
+        if (gasRes.data.success && gasRes.data.latest) {
+          if (gasRes.data.latest.status !== 'Normal') {
+            setGasWarning(gasRes.data.latest);
+          } else {
+            setGasWarning(null);
+          }
+        }
+      } catch (gasErr) {
+        console.error("⚠️ Gas Data Sync Failed:", gasErr);
+      }
 
     } catch (err) {
-      console.error("❌ Sync Error Detail:", err.response?.data || err.message);
+      console.error("❌ Critical Sync Error:", err.response?.data || err.message);
       if (err.response?.status === 401) {
         navigate("/login");
-      } else {
-        if (!silent) toast.error(`Sync Failure: ${err.response?.data?.message || err.message}`);
       }
     } finally {
       if (!silent) setLoading(false);
@@ -209,12 +243,12 @@ const CollectorDashboardModern = () => {
     navigate("/login");
   };
 
-  if (loading && !analytics)
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-slate-500 font-medium">Loading Dashboard...</p>
+          <p className="text-slate-500 font-medium tracking-tight">Syncing Dashboard Data...</p>
         </div>
       </div>
     );
@@ -352,21 +386,66 @@ const CollectorDashboardModern = () => {
             {/* Top Bar */}
             <div className="flex justify-between items-end mb-8">
               <div>
+                <button
+                  onClick={() => navigate("/")}
+                  className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-emerald-600 mb-3 transition-colors group"
+                >
+                  <FaArrowLeft className="group-hover:-translate-x-1 transition-transform" />
+                  <span>Back</span>
+                </button>
                 <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1">
                   {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} View
                 </h1>
                 <p className="text-xs text-slate-500 font-medium">Hello, {user?.name} • Your EcoLoop Collector Portal</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-100 flex items-center gap-2 px-3 py-2">
+              <div 
+                className="bg-white rounded-xl shadow-sm border border-slate-100 flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 transition-all"
+                onClick={() => navigate('/profile')}
+              >
                 <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-xs font-bold">
                   {user?.name?.charAt(0)}
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-900 truncate max-w-[120px]">{user?.name}</p>
-                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Collector ID: ...{user?._id?.slice(-4)}</p>
+                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Collector ID: ...{(user?.id || user?._id)?.slice(-4)}</p>
                 </div>
               </div>
             </div>
+
+            {/* Gas Safety Warning */}
+            {gasWarning && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`mb-8 p-6 rounded-[2.5rem] border shadow-xl flex flex-col md:flex-row items-center gap-6 animate-pulse ${gasWarning.status === 'High' ? 'bg-rose-600 text-white border-rose-400' : 'bg-amber-100 text-amber-900 border-amber-200'}`}
+              >
+                <div className={`p-4 rounded-3xl ${gasWarning.status === 'High' ? 'bg-white/20' : 'bg-amber-200'} flex items-center justify-center`}>
+                  <FaBolt className={gasWarning.status === 'High' ? 'text-white' : 'text-amber-700'} size={24} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${gasWarning.status === 'High' ? 'bg-white text-rose-600' : 'bg-amber-700 text-white'}`}>
+                      {gasWarning.status} Risk Level
+                    </span>
+                    <h3 className="text-lg font-black uppercase tracking-tight">Harmful Gas Detection Alert</h3>
+                  </div>
+                  <p className="text-sm font-bold leading-relaxed">
+                    Harmful gases may be present inside the bin ({gasWarning.binId} - {gasWarning.gasLevel} PPM). 
+                    Sanitation workers should avoid cleaning the bin until proper ventilation or waste collection is performed. 
+                    Worker safety is a priority, and immediate action is recommended.
+                  </p>
+                </div>
+                {gasWarning.status === 'High' && (
+                  <div className="hidden md:block w-px h-16 bg-white/20"></div>
+                )}
+                <button 
+                  onClick={() => navigate('/admin/smart-bin-monitor')}
+                  className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${gasWarning.status === 'High' ? 'bg-white text-rose-600 hover:bg-rose-50' : 'bg-amber-700 text-white hover:bg-amber-800'}`}
+                >
+                  Inspect Bin
+                </button>
+              </motion.div>
+            )}
 
             {/* TASK VIEWS (Dashboard, Collected, Pending) */}
             {(activeTab === "dashboard" || activeTab === "collected" || activeTab === "pending_tasks") && (
@@ -411,79 +490,90 @@ const CollectorDashboardModern = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {(activeTab === "collected"
-                        ? pickups.filter(p => p.status === "collected")
-                        : activeTab === "pending_tasks"
-                          ? pickups.filter(p => p.status === "pending")
-                          : pickups.filter(p => p.status !== "collected").slice(0, 8)
-                      ).map((pickup) => (
-                        <tr key={pickup._id} className="hover:bg-slate-50/50 transition-all">
-                          <td className="px-6 py-5">
-                            <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                              {pickup.user_id?.name || "User"}
-                              {pickup.is_immediate && (
-                                <span className="w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
-                              )}
-                            </p>
-                            <div className={`mt-1 flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit ${getCategoryStyle(pickup.category_id?.name).bg} ${getCategoryStyle(pickup.category_id?.name).text} border border-white`}>
-                              {getCategoryStyle(pickup.category_id?.name).icon}
-                              <span className="text-[9px] font-black uppercase tracking-wider">{pickup.category_id?.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-5">
-                            <p className="text-xs font-bold text-slate-700 tracking-tight">Ward {pickup.user_id?.wardNumber}</p>
-                            <p className="text-[10px] text-slate-400">Unit {pickup.user_id?.houseNumber}</p>
-                          </td>
-                          <td className="px-6 py-5 whitespace-nowrap">
-                            <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${pickup.status === "collected" ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700"
-                              }`}>
-                              {pickup.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-5 text-right">
-                            <div className="flex flex-col items-end gap-2">
-                              {pickup.status !== "collected" ? (
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Note..."
-                                    className="px-2 py-1 bg-slate-50 border border-slate-100 rounded text-[10px] w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                    value={localReasons[pickup._id] || ""}
-                                    onChange={(e) => setLocalReasons({ ...localReasons, [pickup._id]: e.target.value })}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => updateStatus(pickup._id, "collected")}
-                                    disabled={updatingId === pickup._id}
-                                    className={`px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all active:scale-95 ${updatingId === pickup._id ? 'opacity-50' : ''}`}
-                                  >
-                                    {updatingId === pickup._id ? "Wait..." : "Done"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => updateStatus(pickup._id, "pending")}
-                                    disabled={updatingId === pickup._id}
-                                    className={`px-3 py-2 bg-white border border-slate-200 text-amber-600 text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-50 transition-all ${updatingId === pickup._id ? 'opacity-50' : ''}`}
-                                  >
-                                    Hold
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 text-emerald-500 font-black text-[10px] uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                                  <FaCheckCircle className="text-xs" /> Finished
-                                </div>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => { setSelectedPickupForMap(pickup); setShowMap(true); }}
-                                className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600 hover:bg-emerald-600 hover:text-white transition-all"
-                              >
-                                <FaMap size={14} />
-                              </button>
+                      {pickups.length === 0 ? (
+                        <tr>
+                          <td colSpan="4" className="px-6 py-20 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                              <FaTruck className="text-slate-200 text-3xl" />
+                              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No active pickups found at the moment</p>
                             </div>
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        (activeTab === "collected"
+                          ? pickups.filter(p => p.status === "collected")
+                          : activeTab === "pending_tasks"
+                            ? pickups.filter(p => p.status === "pending")
+                            : pickups.filter(p => p.status !== "collected")
+                        ).map((pickup) => (
+                          <tr key={pickup._id} className="hover:bg-slate-50/50 transition-all">
+                            <td className="px-6 py-5">
+                              <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                {pickup.user_id?.name || "User"}
+                                {pickup.is_immediate && (
+                                  <span className="w-2 h-2 bg-rose-500 rounded-full animate-ping"></span>
+                                )}
+                              </p>
+                              <div className={`mt-1 flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit ${getCategoryStyle(pickup.category_id?.name).bg} ${getCategoryStyle(pickup.category_id?.name).text} border border-white`}>
+                                {getCategoryStyle(pickup.category_id?.name).icon}
+                                <span className="text-[9px] font-black uppercase tracking-wider">{pickup.category_id?.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              <p className="text-xs font-bold text-slate-700 tracking-tight">Ward {pickup.user_id?.wardNumber}</p>
+                              <p className="text-[10px] text-slate-400">Unit {pickup.user_id?.houseNumber}</p>
+                            </td>
+                            <td className="px-6 py-5 whitespace-nowrap">
+                              <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${pickup.status === "collected" ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700"
+                                }`}>
+                                {pickup.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                              <div className="flex flex-col items-end gap-2">
+                                {pickup.status !== "collected" ? (
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      placeholder="Note..."
+                                      className="px-2 py-1 bg-slate-50 border border-slate-100 rounded text-[10px] w-24 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                      value={localReasons[pickup._id] || ""}
+                                      onChange={(e) => setLocalReasons({ ...localReasons, [pickup._id]: e.target.value })}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => updateStatus(pickup._id, "collected")}
+                                      disabled={updatingId === pickup._id}
+                                      className={`px-4 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all active:scale-95 ${updatingId === pickup._id ? 'opacity-50' : ''}`}
+                                    >
+                                      {updatingId === pickup._id ? "Wait..." : "Done"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => updateStatus(pickup._id, "pending")}
+                                      disabled={updatingId === pickup._id}
+                                      className={`px-3 py-2 bg-white border border-slate-200 text-amber-600 text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-slate-50 transition-all ${updatingId === pickup._id ? 'opacity-50' : ''}`}
+                                    >
+                                      Hold
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 text-emerald-500 font-black text-[10px] uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                                    <FaCheckCircle className="text-xs" /> Finished
+                                  </div>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => { setSelectedPickupForMap(pickup); setShowMap(true); }}
+                                  className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600 hover:bg-emerald-600 hover:text-white transition-all"
+                                >
+                                  <FaMap size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

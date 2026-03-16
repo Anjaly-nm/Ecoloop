@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 // Hosted backend register endpoint (Vercel)
-const String registerUrl = 'https://ecoloop-eight.vercel.app/api/user/register';
+const String registerUrl = 'https://ecoloop-psi.vercel.app/api/user/register';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});

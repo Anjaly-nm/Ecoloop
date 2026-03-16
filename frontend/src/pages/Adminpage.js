@@ -21,12 +21,35 @@ import {
   ChevronRight,
   TrendingUp,
   Package,
-  Activity
+  Activity,
+  Cpu
 } from "lucide-react";
 
 const AdminPage = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [gasAlert, setGasAlert] = useState(null);
+
+  React.useEffect(() => {
+    const fetchGasAlert = async () => {
+      try {
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:4321';
+        const response = await fetch(`${apiUrl}/api/iot/latest-readings`);
+        const data = await response.json();
+        if (data.success && data.latest && data.latest.status !== 'Normal') {
+          setGasAlert(data.latest);
+        } else {
+          setGasAlert(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch gas alert:", err);
+      }
+    };
+
+    fetchGasAlert();
+    const interval = setInterval(fetchGasAlert, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -44,6 +67,7 @@ const AdminPage = () => {
     { icon: Clock, label: "Leave Requests", path: "/admin/leave-applications" },
     { icon: LineChart, label: "System Reports", path: "/admin/SystemReports" },
     { icon: Activity, label: "Assign Delivery", path: "/admin/assign-delivery-boy" },
+    { icon: Cpu, label: "Smart Bin Monitor", path: "/admin/smart-bin-monitor" },
   ];
 
   const quickAccess = [
@@ -53,6 +77,7 @@ const AdminPage = () => {
     { icon: Store, title: "Market Hub", path: "/admin/shop-management", color: "amber", desc: "Store & Inventory" },
     { icon: LineChart, title: "Data Reports", path: "/admin/SystemReports", color: "rose", desc: "System analytics" },
     { icon: Leaf, title: "EcoPoints", path: "/admin/Ecopints", color: "green", desc: "Rewards control" },
+    { icon: Cpu, title: "Bin Monitor", path: "/admin/smart-bin-monitor", color: "rose", desc: "IoT Gas Sensor" },
     { icon: Package, title: "Eco Products", path: "/products", color: "orange", desc: "Verify listings" },
     { icon: Zap, title: "Efficiency", path: "/adminpage", color: "indigo", desc: "Optimize routes" },
   ];
@@ -148,7 +173,10 @@ const AdminPage = () => {
               <span className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full border-2 border-white shadow-[0_0_8px_rgba(168,85,247,0.5)]"></span>
             </button>
             <div className="h-10 w-[1px] bg-slate-200 mx-2"></div>
-            <div className="flex items-center gap-3">
+            <div 
+              className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1.5 rounded-xl transition-all"
+              onClick={() => navigate('/profile')}
+            >
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-black text-slate-900 leading-tight uppercase tracking-tight">Anjaly Admin</p>
                 <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">Super Admin</p>
@@ -172,6 +200,43 @@ const AdminPage = () => {
               <h1 className="text-4xl font-black text-slate-900 tracking-tightest leading-tight">Dashboard Overview</h1>
               <p className="text-sm text-slate-500 font-medium tracking-tight">Monitoring the core of EcoLoop intelligence architecture.</p>
             </div>
+
+            {/* Smart Bin Safety Alert */}
+            <AnimatePresence>
+              {gasAlert && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-10 overflow-hidden"
+                >
+                  <div className={`p-6 rounded-[2.5rem] border-2 shadow-xl flex flex-col md:flex-row items-center gap-6 ${gasAlert.status === 'High' ? 'bg-rose-600 text-white border-rose-400 shadow-rose-200/50' : 'bg-amber-500 text-white border-amber-300 shadow-amber-200/50'}`}>
+                    <div className="p-4 bg-white/20 rounded-3xl flex items-center justify-center shrink-0">
+                      <Zap className="text-white" size={32} />
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
+                        <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-white/30">
+                          Critical Alert: {gasAlert.status} Risk
+                        </span>
+                        <span className="text-xs font-black uppercase tracking-widest opacity-80">
+                          Bin: {gasAlert.binId}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold leading-relaxed">
+                        Harmful gases may be present inside the bin. Sanitation workers should avoid cleaning the bin until proper ventilation or waste collection is performed. Worker safety is a priority, and immediate action is recommended.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => navigate('/admin/smart-bin-monitor')}
+                      className="px-8 py-3.5 bg-white text-slate-900 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 shrink-0 shadow-lg shadow-black/10"
+                    >
+                      Audit Bin Log
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
 
 

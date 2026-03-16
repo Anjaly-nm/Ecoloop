@@ -26,16 +26,18 @@ const Applications = () => {
   }, []);
 
   const fetchApplications = async (type) => {
+    const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
+
     try {
       setLoading(prev => ({ ...prev, [type]: true }));
       let response;
 
       if (type === 'seller') {
-        response = await axios.get('http://localhost:4321/api/seller/view-seller-applications');
+        response = await axios.get(`${API_BASE}/seller/view-seller-applications`);
       } else if (type === 'collector') {
-        response = await axios.get('http://localhost:4321/api/user/view-applications');
+        response = await axios.get(`${API_BASE}/user/view-applications`);
       } else if (type === 'delivery-boy') {
-        response = await axios.get('http://localhost:4321/api/user/view-delivery-applications');
+        response = await axios.get(`${API_BASE}/user/view-delivery-applications`);
       }
 
       setApplications(prev => ({
@@ -50,18 +52,19 @@ const Applications = () => {
   };
 
   const handleApprove = async (id, type) => {
+    const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
     try {
       let response;
       if (type === 'seller') {
-        response = await axios.post(`http://localhost:4321/api/seller/approve-seller/${id}`, {
+        response = await axios.post(`${API_BASE}/seller/approve-seller/${id}`, {
           adminRemarks: 'Application approved by admin'
         });
       } else if (type === 'collector') {
-        response = await axios.post(`http://localhost:4321/api/user/approve-collector/${id}`, {
+        response = await axios.post(`${API_BASE}/user/approve-collector/${id}`, {
           adminRemarks: 'Application approved by admin'
         });
       } else if (type === 'delivery-boy') {
-        response = await axios.post(`http://localhost:4321/api/user/approve-delivery-boy/${id}`, {
+        response = await axios.post(`${API_BASE}/user/approve-delivery-boy/${id}`, {
           adminRemarks: 'Application approved by admin'
         });
       }
@@ -74,20 +77,21 @@ const Applications = () => {
   };
 
   const handleReject = async (id, type) => {
+    const API_BASE = window.location.hostname === 'localhost' ? "http://localhost:4321/api" : "/api";
     const reason = prompt('Enter reason for rejection:');
     if (reason) {
       try {
         let response;
         if (type === 'seller') {
-          response = await axios.post(`http://localhost:4321/api/seller/reject-seller/${id}`, {
+          response = await axios.post(`${API_BASE}/seller/reject-seller/${id}`, {
             adminRemarks: reason
           });
         } else if (type === 'collector') {
-          response = await axios.post(`http://localhost:4321/api/user/reject-collector/${id}`, {
+          response = await axios.post(`${API_BASE}/user/reject-collector/${id}`, {
             adminRemarks: reason
           });
         } else if (type === 'delivery-boy') {
-          response = await axios.post(`http://localhost:4321/api/user/reject-delivery-boy/${id}`, {
+          response = await axios.post(`${API_BASE}/user/reject-delivery-boy/${id}`, {
             adminRemarks: reason
           });
         }
@@ -453,8 +457,8 @@ const Applications = () => {
             <button
               onClick={() => setActiveTab('all')}
               className={`whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm ${activeTab === 'all'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
               All Applications
@@ -465,8 +469,8 @@ const Applications = () => {
             <button
               onClick={() => setActiveTab('seller')}
               className={`whitespace-nowrap flex items-center gap-2 pb-3 px-1 border-b-2 font-medium text-sm ${activeTab === 'seller'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
               {getApplicationIcon('seller')} Seller
@@ -477,8 +481,8 @@ const Applications = () => {
             <button
               onClick={() => setActiveTab('collector')}
               className={`whitespace-nowrap flex items-center gap-2 pb-3 px-1 border-b-2 font-medium text-sm ${activeTab === 'collector'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
               {getApplicationIcon('collector')} Collector
@@ -489,8 +493,8 @@ const Applications = () => {
             <button
               onClick={() => setActiveTab('delivery-boy')}
               className={`whitespace-nowrap flex items-center gap-2 pb-3 px-1 border-b-2 font-medium text-sm ${activeTab === 'delivery-boy'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
             >
               {getApplicationIcon('delivery-boy')} Delivery Boy

@@ -38,7 +38,7 @@ const VideoSchema = new mongoose.Schema({
     }
 }, {
     // Adds createdAt and updatedAt timestamps automatically
-    timestamps: true 
+    timestamps: true
 });
 
 module.exports = mongoose.model('Video', VideoSchema);

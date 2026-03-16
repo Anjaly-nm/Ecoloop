@@ -84,11 +84,11 @@ const UserLearningVideos = () => {
       <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
         <FaYoutube className="mr-3 text-red-600 text-xl" /> {selectedCategory} Lessons ({filteredVideos.length})
       </h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {filteredVideos.map(video => (
-          <div 
-            key={video.id} 
+          <div
+            key={video.id}
             className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100 hover:shadow-purple-300/50 transition duration-300 transform hover:-translate-y-1"
           >
             <div className="p-6">
@@ -102,7 +102,7 @@ const UserLearningVideos = () => {
                 {video.description}
               </p>
             </div>
-            
+
             <div className="p-6 bg-gray-50 border-t flex justify-end">
               <a
                 href={video.url}
@@ -115,7 +115,7 @@ const UserLearningVideos = () => {
             </div>
           </div>
         ))}
-        
+
         {filteredVideos.length === 0 && (
           <div className="col-span-full p-10 bg-white rounded-xl shadow-lg text-center">
             <p className="text-gray-500 text-lg font-medium">
@@ -125,7 +125,7 @@ const UserLearningVideos = () => {
         )}
 
       </div>
-      
+
       {/* Optional: Back Button for navigation */}
       <div className="mt-10 pt-5 border-t border-gray-200">
         <button

@@ -31,21 +31,21 @@ const generatePassword = () => {
 // ----------------------------------------------------
 // 1. APPROVE COLLECTOR APPLICATION ROUTE
 // ----------------------------------------------------
-router.post('/approve-application/:applicationId', async (req, res) => {
+router.post('/approve-collector/:applicationId', async (req, res) => {
     const applicationId = req.params.applicationId;
     let newUser = null; // Variable to hold the user object for potential cleanup
 
     try {
         // 1. Retrieve the pending application
-        const application = await CollectorApplications.findById(applicationId); 
+        const application = await CollectorApplications.findById(applicationId);
 
         if (!application) return res.status(404).json({ message: 'Collector application not found' });
-        
+
         // Check if application is already approved
         if (application.status?.toLowerCase() === 'approved') {
-             return res.status(400).json({ message: 'Application is already approved' });
+            return res.status(400).json({ message: 'Application is already approved' });
         }
-        
+
         // 2. Check if a user with this email already exists
         const existingUser = await User.findOne({ email: application.email });
         if (existingUser) {
@@ -56,20 +56,20 @@ router.post('/approve-application/:applicationId', async (req, res) => {
         const newUsername = await generateUsername(application.email);
         const rawPassword = generatePassword();
         const hashedPassword = await bcrypt.hash(rawPassword, 10);
-        
+
         // 4. Create the new User document
         newUser = new User({
             name: application.name,
             email: application.email,
             phone: application.phone,
             address: application.address,
-            role: 'collector', 
-            username: newUsername, 
-            password: hashedPassword, 
+            role: 'collector',
+            username: newUsername,
+            password: hashedPassword,
         });
 
         // Save the new user first
-        await newUser.save(); 
+        await newUser.save();
 
         // 5. ⭐ ATOMIC UPDATE: Update the application's status to "Approved"
         // This is where the status change is guaranteed.
@@ -78,7 +78,7 @@ router.post('/approve-application/:applicationId', async (req, res) => {
             { status: 'Approved' },
             { new: true, runValidators: true } // Return the updated document & run schema validators
         );
-        
+
         // 🚨 CRITICAL CHECK: Verify the status update succeeded
         if (!updatedApplication) {
             // Log this severe error for manual review and delete the created user
@@ -96,16 +96,16 @@ router.post('/approve-application/:applicationId', async (req, res) => {
         );
 
         // 7. Send the final response (returning the new status is key for frontend)
-        res.status(200).json({ 
+        res.status(200).json({
             message: 'Collector user created and application approved.',
-            userId: newUser._id, 
+            userId: newUser._id,
             username: newUsername,
             application: updatedApplication, // ⭐ Return the fully updated object
         });
 
     } catch (err) {
         console.error(err);
-        
+
         // Check if the error occurred during user creation (Step 4)
         if (newUser && err.name === 'MongoServerError' && err.code === 11000) {
             // Duplicate key error on User (rare if generateUsername is good, but possible)
@@ -113,25 +113,19 @@ router.post('/approve-application/:applicationId', async (req, res) => {
         } else if (err.name === 'ValidationError') {
             return res.status(400).json({ message: 'Validation failed during process.', details: err.errors });
         }
-        
+
         res.status(500).json({ message: 'Server error during approval process', error: err.message });
     }
 });
 
 // ----------------------------------------------------
-// 2. GET PENDING COLLECTOR APPLICATIONS ROUTE
-// ----------------------------------------------------
-router.get('/collector-applications', async (req, res) => {
+// 2. GET PENDING COLLECTOR APPLICATIONS ROUTE (Alias for frontend consistency)
+router.get('/view-applications', async (req, res) => {
     try {
-        // Ensure this endpoint is where the frontend gets its list.
-        // It correctly filters by the 'status' field.
-        const pendingApplications = await CollectorApplications.find({ status: 'Pending' }) 
+        const pendingApplications = await CollectorApplications.find()
             .sort({ createdAt: -1 });
 
-        res.status(200).json({
-            count: pendingApplications.length,
-            applications: pendingApplications
-        });
+        res.status(200).json(pendingApplications);
 
     } catch (err) {
         console.error("Error fetching collector applications:", err);
@@ -139,6 +133,41 @@ router.get('/collector-applications', async (req, res) => {
     }
 });
 
+// ⭐ NEW ROUTE: REJECT COLLECTOR APPLICATION
+router.post('/reject-collector/:applicationId', async (req, res) => {
+    const applicationId = req.params.applicationId;
+    const { adminRemarks } = req.body;
+
+    try {
+        const application = await CollectorApplications.findById(applicationId);
+        if (!application) return res.status(404).json({ message: 'Collector application not found' });
+
+        const updatedApplication = await CollectorApplications.findByIdAndUpdate(
+            applicationId,
+            {
+                status: 'Rejected',
+                adminRemarks: adminRemarks || 'Application rejected by admin'
+            },
+            { new: true }
+        );
+
+        // Send rejection email
+        await emailhelp.sendTextEmail(
+            application.email,
+            'Application Status Update',
+            `Hello ${application.name},\n\nWe regret to inform you that your collector application has been rejected.\n\nReason: ${adminRemarks || 'Application did not meet requirements'}`
+        );
+
+        res.status(200).json({
+            message: 'Collector application rejected successfully',
+            application: updatedApplication
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error during rejection process', error: err.message });
+    }
+});
 // ----------------------------------------------------
 // 3. APPROVE DELIVERY BOY APPLICATION ROUTE
 // ----------------------------------------------------
@@ -148,15 +177,15 @@ router.post('/approve-delivery-boy/:applicationId', async (req, res) => {
 
     try {
         // 1. Retrieve the pending application
-        const application = await DeliveryBoyApplication.findById(applicationId); 
+        const application = await DeliveryBoyApplication.findById(applicationId);
 
         if (!application) return res.status(404).json({ message: 'Delivery boy application not found' });
-        
+
         // Check if application is already approved
         if (application.status?.toLowerCase() === 'approved') {
-             return res.status(400).json({ message: 'Application is already approved' });
+            return res.status(400).json({ message: 'Application is already approved' });
         }
-        
+
         // 2. Check if a user with this email already exists
         const existingUser = await User.findOne({ email: application.email });
         if (existingUser) {
@@ -167,22 +196,22 @@ router.post('/approve-delivery-boy/:applicationId', async (req, res) => {
         const newUsername = await generateUsername(application.email);
         const rawPassword = generatePassword();
         const hashedPassword = await bcrypt.hash(rawPassword, 10);
-        
+
         // 4. Create the new User document
         newUser = new User({
-            name: application.name, 
-            email: application.email, 
-            phone: application.phone, 
+            name: application.name,
+            email: application.email,
+            phone: application.phone,
             address: application.address,
             vehicleType: application.vehicleType, // Add vehicleType for delivery boy
             experience: application.experience, // Add experience for delivery boy
-            role: 'delivery-boy', 
-            username: newUsername, 
-            password: hashedPassword, 
+            role: 'delivery-boy',
+            username: newUsername,
+            password: hashedPassword,
         });
 
         // Save the new user first
-        await newUser.save(); 
+        await newUser.save();
 
         // 5. ⭐ ATOMIC UPDATE: Update the application's status to "Approved"
         // This is where the status change is guaranteed.
@@ -191,7 +220,7 @@ router.post('/approve-delivery-boy/:applicationId', async (req, res) => {
             { status: 'Approved' },
             { new: true, runValidators: true } // Return the updated document & run schema validators
         );
-        
+
         // 🚨 CRITICAL CHECK: Verify the status update succeeded
         if (!updatedApplication) {
             // Log this severe error for manual review and delete the created user
@@ -209,16 +238,16 @@ router.post('/approve-delivery-boy/:applicationId', async (req, res) => {
         );
 
         // 7. Send the final response (returning the new status is key for frontend)
-        res.status(200).json({ 
+        res.status(200).json({
             message: 'Delivery boy user created and application approved.',
-            userId: newUser._id, 
+            userId: newUser._id,
             username: newUsername,
             application: updatedApplication, // ⭐ Return the fully updated object
         });
 
     } catch (err) {
         console.error(err);
-        
+
         // Check if the error occurred during user creation (Step 4)
         if (newUser && err.name === 'MongoServerError' && err.code === 11000) {
             // Duplicate key error on User (rare if generateUsername is good, but possible)
@@ -226,7 +255,7 @@ router.post('/approve-delivery-boy/:applicationId', async (req, res) => {
         } else if (err.name === 'ValidationError') {
             return res.status(400).json({ message: 'Validation failed during process.', details: err.errors });
         }
-        
+
         res.status(500).json({ message: 'Server error during approval process', error: err.message });
     }
 });
@@ -248,7 +277,7 @@ router.post('/reject-delivery-boy/:applicationId', async (req, res) => {
         // Update the application status to 'Rejected' and add remarks
         const updatedApplication = await DeliveryBoyApplication.findByIdAndUpdate(
             applicationId,
-            { 
+            {
                 status: 'Rejected',
                 adminRemarks: adminRemarks || 'Application rejected by admin'
             },
@@ -261,7 +290,7 @@ router.post('/reject-delivery-boy/:applicationId', async (req, res) => {
 
         // Send rejection email
         await emailhelp.sendTextEmail(
-            application.email, 
+            application.email,
             'Application Status Update',
             `Hello ${application.name},
 
@@ -270,9 +299,9 @@ We regret to inform you that your delivery boy application has been rejected.
 Reason: ${adminRemarks || 'Application did not meet requirements'}`
         );
 
-        res.status(200).json({ 
+        res.status(200).json({
             message: 'Delivery boy application rejected successfully',
-            application: updatedApplication 
+            application: updatedApplication
         });
 
     } catch (err) {
@@ -281,20 +310,13 @@ Reason: ${adminRemarks || 'Application did not meet requirements'}`
     }
 });
 
-// ----------------------------------------------------
-// 5. GET PENDING DELIVERY BOY APPLICATIONS ROUTE
-// ----------------------------------------------------
-router.get('/delivery-boy-applications', async (req, res) => {
+// 5. GET PENDING DELIVERY BOY APPLICATIONS ROUTE (Alias for frontend consistency)
+router.get('/view-delivery-applications', async (req, res) => {
     try {
-        // Ensure this endpoint is where the frontend gets its list.
-        // It correctly filters by the 'status' field.
-        const pendingApplications = await DeliveryBoyApplication.find({ status: 'Pending' }) 
+        const applications = await DeliveryBoyApplication.find()
             .sort({ createdAt: -1 });
 
-        res.status(200).json({
-            count: pendingApplications.length,
-            applications: pendingApplications
-        });
+        res.status(200).json(applications);
 
     } catch (err) {
         console.error("Error fetching delivery boy applications:", err);

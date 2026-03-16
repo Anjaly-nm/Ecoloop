@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaTruck, FaMapMarkerAlt, FaClock, FaWeight, FaPhone, FaUser, FaSignOutAlt, FaBars, FaTimes, FaBox, FaCheckCircle, FaRoad, FaRoute, FaCalendarAlt, FaCalendarCheck, FaLeaf, FaShoppingCart, FaChartLine, FaHeadset, FaEnvelope, FaComments, FaWallet, FaIdBadge, FaStar, FaTrophy, FaUserCheck, FaUserTie } from 'react-icons/fa';
+import { FaTruck, FaMapMarkerAlt, FaClock, FaWeight, FaPhone, FaUser, FaSignOutAlt, FaBars, FaTimes, FaBox, FaCheckCircle, FaRoad, FaRoute, FaCalendarAlt, FaCalendarCheck, FaLeaf, FaShoppingCart, FaChartLine, FaHeadset, FaEnvelope, FaComments, FaWallet, FaIdBadge, FaUserTie } from 'react-icons/fa';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -9,7 +9,7 @@ import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
 // Component for drawing routes
-const Routing = ({ from, to }) => {
+const Routing = ({ from, to, onDistance }) => {
   const map = useMap();
   const routingControlRef = React.useRef(null);
 
@@ -32,6 +32,12 @@ const Routing = ({ from, to }) => {
         createMarker: () => null
       }).addTo(map);
 
+      routingControl.on('routesfound', (e) => {
+        const routes = e.routes;
+        const dist = routes[0].summary.totalDistance / 1000;
+        if (onDistance) onDistance(dist);
+      });
+
       routingControlRef.current = routingControl;
     } catch (err) {
       console.error("Error creating routing control:", err);
@@ -40,7 +46,6 @@ const Routing = ({ from, to }) => {
     return () => {
       if (routingControl && map) {
         try {
-          // Clear waypoints first to stop any pending async calculations
           routingControl.setWaypoints([]);
           map.removeControl(routingControl);
         } catch (e) {
@@ -49,7 +54,7 @@ const Routing = ({ from, to }) => {
       }
       routingControlRef.current = null;
     };
-  }, [map]);
+  }, [map, onDistance]);
 
   // Updates: Only update waypoints when coordinates change
   useEffect(() => {
@@ -65,6 +70,17 @@ const Routing = ({ from, to }) => {
     }
   }, [from, to]);
 
+  return null;
+};
+
+// Component to handle map centering
+const CenterOnTarget = ({ position }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, 13, { duration: 1.5 });
+    }
+  }, [position, map]);
   return null;
 };
 
@@ -122,18 +138,29 @@ const DeliveryDashboard = () => {
   const [showMap, setShowMap] = useState(false);
   const [currentPosition, setCurrentPosition] = useState(null);
   const [hasCentered, setHasCentered] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [selectedDeliveryId, setSelectedDeliveryId] = useState(null);
+  const geocodingInProgress = useRef(false);
 
   const viewMyRoutes = () => {
     setActiveTab('in-transit');
-    const inTransitDelivery = deliveries.find(d => d.status === 'in-transit');
-    if (inTransitDelivery && inTransitDelivery.coordinates) {
-      setSelectedRoute(inTransitDelivery.coordinates);
+    const inTransitDelivery = deliveries.find(d => d.status === 'in-transit' || d.status === 'shipped');
+    if (inTransitDelivery) {
+      setSelectedDeliveryId(inTransitDelivery.id);
       setShowMap(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     setSidebarOpen(false);
   };
+   
+  const handleRoutingDistance = useCallback((dist) => {
+    // Log distance or update state if needed in future
+    console.log(`Route distance: ${dist.toFixed(2)} km`);
+    if (selectedDeliveryId) {
+      setDeliveries(prev => prev.map(d => 
+        d.id === selectedDeliveryId ? { ...d, distance: `${dist.toFixed(1)} km` } : d
+      ));
+    }
+  }, [selectedDeliveryId]);
 
   // Fetch deliveries from API
   const fetchDeliveries = async () => {
@@ -162,18 +189,21 @@ const DeliveryDashboard = () => {
           } : null,
           customerName: order.userId?.name || 'Guest',
           customerPhone: order.userId?.phone || 'N/A',
-          customerAddress: order.shippingAddress?.address || 'No address provided',
+          houseNumber: order.userId?.houseNumber || order.shippingAddress?.houseNumber || '',
+          pincode: order.shippingAddress?.pincode || '',
+          customerAddress: (typeof order.shippingAddress === 'string' && order.shippingAddress.length > 5) 
+            ? order.shippingAddress 
+            : (order.shippingAddress?.address 
+                ? `${order.shippingAddress.address}${order.shippingAddress.city ? ', ' + order.shippingAddress.city : ''}` 
+                : (order.userId?.address || 'No address provided')),
           items: order.items?.map(i => i.productId?.name || 'Item') || [],
-          weight: '2.5 kg', // Placeholder as backend might not have weight yet
-          priority: 'medium', // Placeholder
-          distance: '3.2 km', // Placeholder
+          weight: '2.5 kg', 
+          priority: 'medium',
+          distance: '...', // Will be updated by real routing
           scheduledTime: new Date(order.createdAt).toLocaleTimeString(),
           notes: order.userId?.wardNumber ? `Ward ${order.userId.wardNumber}` : '',
-          // Mock coordinates for demo (near Kerala, India)
-          coordinates: [
-            10.85 + (Math.random() - 0.5) * 0.05,
-            76.27 + (Math.random() - 0.5) * 0.05
-          ]
+          coordinates: [9.5630, 76.7878], // Default to Kanjirappally center until geocoded
+          isMockCoords: true
         }));
         setDeliveries(mappedDeliveries);
       } else {
@@ -261,6 +291,85 @@ const DeliveryDashboard = () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
   }, []);
+
+  // Background geocoding for deliveries
+  useEffect(() => {
+    const geocodeDeliveries = async () => {
+      // Find deliveries that still have mock coordinates
+      const needsGeocoding = deliveries.filter(d => d.isMockCoords && d.customerAddress);
+      
+      if (needsGeocoding.length === 0 || geocodingInProgress.current) return;
+
+      geocodingInProgress.current = true;
+      
+      for (const d of needsGeocoding) {
+        try {
+          // Smart Geocoding: Try to clean the address and fallback if needed
+          const cleanAddress = (addr) => {
+            return addr
+              .replace(/\(H\)/gi, '') // Remove (H) for house
+              .replace(/\(HO\)/gi, '') // Remove (HO)
+              .replace(/House/gi, '')
+              .split(',')
+              .map(part => part.trim())
+              .filter(part => part.length > 2)
+              .join(', ');
+          };
+
+          const fullAddress = cleanAddress(d.customerAddress);
+          const cityPart = d.customerAddress.split(',').pop().trim();
+          
+          // Try 1: Full cleaned address
+          const variations = [
+            [fullAddress, d.pincode, "Kerala, India"].filter(Boolean).join(", "),
+            [d.customerAddress.split(',').slice(1).join(','), "Kerala, India"].filter(Boolean).join(", "), // Drop first part (often house name)
+            [cityPart, "Kerala, India"].filter(Boolean).join(", ") // Fallback to city/town only
+          ];
+
+          let found = false;
+          for (const queryStr of variations) {
+            const query = encodeURIComponent(queryStr);
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+              headers: { 'User-Agent': 'EcoLoopDashboard/1.0' }
+            });
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+              const newCoords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+              const jitter = (Math.random() - 0.5) * 0.0001; 
+              setDeliveries(prev => prev.map(item => 
+                item.id === d.id ? { ...item, coordinates: [newCoords[0] + jitter, newCoords[1] + jitter], isMockCoords: false } : item
+              ));
+              console.log(`Geocoding SUCCESS for ${d.orderId} using query: ${queryStr}`);
+              found = true;
+              break;
+            }
+            // Small delay between trials within the loop if we have to try multiple queries
+            await new Promise(r => setTimeout(r, 500));
+          }
+
+          if (!found) {
+            console.log(`Geocoding FAILED for ${d.orderId} after all trials.`);
+            setDeliveries(prev => prev.map(item => 
+              item.id === d.id ? { ...item, isMockCoords: false } : item
+            ));
+          }
+        } catch (err) {
+          console.error("Geocoding exception for:", d.customerAddress, err);
+          setDeliveries(prev => prev.map(item => 
+            item.id === d.id ? { ...item, isMockCoords: false } : item
+          ));
+        }
+        // Delay to respect Nominatim policy
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      geocodingInProgress.current = false;
+    };
+
+    if (deliveries.length > 0) {
+      geocodeDeliveries();
+    }
+  }, [deliveries]);
 
   const fetchSalarySummary = async () => {
     try {
@@ -483,14 +592,14 @@ const DeliveryDashboard = () => {
     // Checking map logic: id: order._id ... SO id is correct.
   };
 
-  const fetchChatHistory = async (orderId) => {
+  const fetchChatHistory = useCallback(async (orderId) => {
     try {
       const token = localStorage.getItem("token");
       const base = process.env.REACT_APP_API_URL || "http://localhost:4321";
       const res = await axios.get(`${base}/api/messages/history/${orderId}`, { headers: { token } });
       const formattedMessages = (res.data.messages || []).map(msg => ({
         // Map backend message format to frontend format used in render
-        sender: msg.sender._id === user._id ? 'me' : 'seller',
+        sender: msg.sender._id === user?._id ? 'me' : 'seller',
         text: msg.text,
         time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }));
@@ -498,7 +607,7 @@ const DeliveryDashboard = () => {
     } catch (err) {
       console.error("Error fetching chat history:", err);
     }
-  };
+  }, [user?._id]);
 
   // Poll for messages when modal is open
   useEffect(() => {
@@ -509,7 +618,7 @@ const DeliveryDashboard = () => {
       }, 3000);
     }
     return () => clearInterval(interval);
-  }, [showContactSellerModal, selectedSellerOrder]);
+  }, [showContactSellerModal, selectedSellerOrder, fetchChatHistory]);
 
   const closeContactSellerModal = () => {
     setShowContactSellerModal(false);
@@ -551,14 +660,14 @@ const DeliveryDashboard = () => {
 
   // --- Admin Chat Functions ---
 
-  const fetchDirectChatHistory = async (userId) => {
+  const fetchDirectChatHistory = useCallback(async (userId) => {
     try {
       const token = localStorage.getItem("token");
       const base = process.env.REACT_APP_API_URL || "http://localhost:4321";
       const res = await axios.get(`${base}/api/messages/history/direct/${userId}`, { headers: { token } });
       const formattedMessages = (res.data.messages || []).map(msg => ({
         // Map backend message format to frontend format used in render
-        sender: msg.sender._id === user._id ? 'me' : 'admin',
+        sender: msg.sender._id === user?._id ? 'me' : 'admin',
         text: msg.text,
         time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }));
@@ -566,7 +675,7 @@ const DeliveryDashboard = () => {
     } catch (err) {
       console.error("Error fetching direct chat history:", err);
     }
-  };
+  }, [user?._id]);
 
   const openContactAdminModal = async () => {
     // try to fetch admin if not present
@@ -633,7 +742,7 @@ const DeliveryDashboard = () => {
       }, 3000);
     }
     return () => clearInterval(interval);
-  }, [showContactAdminModal, adminUser]);
+  }, [showContactAdminModal, adminUser, fetchDirectChatHistory]);
 
   if (loading) {
     return (
@@ -688,7 +797,7 @@ const DeliveryDashboard = () => {
               </button>
             </li>
             <li>
-              <button type="button" onClick={toggleProfileView} className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
+              <button type="button" onClick={() => navigate('/profile')} className="flex items-center gap-2 p-2 text-green-100 rounded text-sm hover:bg-green-600 transition-colors duration-200 w-full text-left">
                 <FaUser className="text-green-200 text-xs" /> Profile
               </button>
             </li>
@@ -1492,7 +1601,7 @@ const DeliveryDashboard = () => {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    setSelectedRoute(delivery.coordinates);
+                                    setSelectedDeliveryId(delivery.id);
                                     setShowMap(true);
                                   }}
                                   className="flex-1 py-1 bg-blue-600 text-white text-[10px] rounded hover:bg-blue-700 transition-colors"
@@ -1513,17 +1622,24 @@ const DeliveryDashboard = () => {
                     ))}
 
                     {/* Draw route if selected */}
-                    {currentPosition && selectedRoute && (
-                      <Routing from={currentPosition} to={selectedRoute} />
+                    {currentPosition && selectedDeliveryId && (
+                      <React.Fragment key={selectedDeliveryId}>
+                        <Routing 
+                          from={currentPosition} 
+                          to={deliveries.find(d => d.id === selectedDeliveryId)?.coordinates} 
+                          onDistance={handleRoutingDistance}
+                        />
+                        <CenterOnTarget position={deliveries.find(d => d.id === selectedDeliveryId)?.coordinates} />
+                      </React.Fragment>
                     )}
                   </MapContainer>
 
                   {/* Floating Button to Go to Current Location */}
                   {/* Floating Buttons */}
                   <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-2">
-                    {selectedRoute && (
+                    {selectedDeliveryId && (
                       <button
-                        onClick={() => setSelectedRoute(null)}
+                        onClick={() => setSelectedDeliveryId(null)}
                         className="bg-red-500 p-3 rounded-full shadow-lg text-white hover:bg-red-600 transition-all flex items-center justify-center"
                         title="Clear Route"
                       >
@@ -1582,7 +1698,9 @@ const DeliveryDashboard = () => {
                               <FaClock className="text-green-500" /> {delivery.scheduledTime}
                             </p>
                             <p className="text-sm text-green-700 flex items-center gap-1 mt-1">
-                              <FaRoad className="text-green-500" /> {delivery.distance}
+                              <FaRoad className="text-green-500" /> {delivery.distance === '...' && !delivery.isMockCoords && currentPosition 
+                                ? (L.latLng(currentPosition[0], currentPosition[1]).distanceTo(L.latLng(delivery.coordinates[0], delivery.coordinates[1])) / 1000).toFixed(1) + ' km*'
+                                : delivery.distance}
                             </p>
                           </div>
                         </div>
@@ -1641,13 +1759,19 @@ const DeliveryDashboard = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedRoute(delivery.coordinates);
+                              setSelectedDeliveryId(delivery.id);
                               setShowMap(true);
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className="px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm hover:bg-emerald-200 transition-colors font-medium flex items-center gap-1"
+                            className={`px-3 py-2 rounded-lg text-sm transition-colors font-medium flex items-center gap-1 ${
+                              delivery.isMockCoords 
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                            }`}
+                            title={delivery.isMockCoords ? "Locating address..." : "View Route"}
                           >
-                            <FaRoute className="text-emerald-600" /> View Route
+                            <FaRoute className={delivery.isMockCoords ? 'text-gray-300' : 'text-emerald-600'} /> 
+                            {delivery.isMockCoords ? 'Locating...' : 'View Route'}
                           </button>
 
                           {/* Contact Seller Button - New Feature */}

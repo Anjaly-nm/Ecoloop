@@ -370,8 +370,7 @@ const SellerDashboard = () => {
 
   // Handle profile icon click
   const handleProfileClick = () => {
-    setShowProfileModal(true);
-    fetchProfileData();
+    navigate('/profile');
   };
 
   // Handle profile form input change

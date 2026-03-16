@@ -6,13 +6,13 @@ const WasteSubmission = require("../models/user/wasteSubmissions"); // Assuming 
 const DeliveryBoyAssignment = require("../models/admin/deliveryBoyAssignment"); // Import new model
 const { isAdmin } = require("../middlewares/middleware");
 
-// ✅ Admin: assign collector to ward + category (Standard/Scheduled Assignment)
+// ✅ Admin: assign collector to ward (Standard/Scheduled Assignment)
 router.post("/assign", isAdmin, async (req, res) => {
     try {
-        const { wardNumber, categoryId, collectorId } = req.body;
+        const { wardNumber, collectorId } = req.body;
 
-        if (!wardNumber || !categoryId || !collectorId) {
-            return res.status(400).json({ message: "Ward Number, Category, and Collector must be provided." });
+        if (!wardNumber || !collectorId) {
+            return res.status(400).json({ message: "Ward Number and Collector must be provided." });
         }
 
         // 1. Validate collector
@@ -21,41 +21,24 @@ router.post("/assign", isAdmin, async (req, res) => {
             return res.status(400).json({ message: "❌ Invalid collector ID or role" });
         }
 
-        const targetWardString = String(wardNumber);
-
-        // --- CORE LOGIC: ENSURE COLLECTOR UNIQUENESS PER WARD ---
-
-        // Find and delete ALL existing assignments for this collector and ward 
-        // that are *not* for the current categoryId. 
-        const deletionResult = await CollectorAssignment.deleteMany({
-            wardNumber: targetWardString,
-            collectorId,
-            categoryId: { $ne: categoryId }
-        });
-
-        if (deletionResult.deletedCount > 0) {
-            console.log(`[CLEANUP] Deleted ${deletionResult.deletedCount} old assignment(s) for Collector ${collectorId} in Ward ${targetWardString}.`);
-        }
+        const targetWardString = String(wardNumber).trim();
 
         // 2. Handle the current assignment (local overwrite/create)
+        // Only one collector per ward.
         const newAssignment = await CollectorAssignment.findOneAndUpdate(
-            { wardNumber: targetWardString, categoryId },
+            { wardNumber: targetWardString },
             { collectorId },
             { new: true, upsert: true }
         );
 
         res.status(200).json({
-            message: "✅ Collector assigned successfully (previous category assignment for this collector/ward cleared)",
+            message: `✅ Collector assigned successfully to Ward ${targetWardString}`,
             assignment: newAssignment,
         });
 
     } catch (error) {
         console.error("Error assigning collector:", error);
-        let errorMessage = "❌ Error assigning collector";
-        if (error.name === 'CastError' && error.kind === 'ObjectId') {
-            errorMessage = "❌ Invalid Category or Collector ID format.";
-        }
-        res.status(500).json({ message: errorMessage, error: error.message });
+        res.status(500).json({ message: "❌ Error assigning collector", error: error.message });
     }
 });
 
@@ -108,21 +91,20 @@ router.put("/assign-to-submission/:id", isAdmin, async (req, res) => {
 
 // ----------------------------------------------------------------------
 
-// ⭐ EXISTING ROUTE: Admin: delete a collector assignment by ward and category
+// ⭐ EXISTING ROUTE: Admin: delete a collector assignment by ward
 router.post("/unassign", isAdmin, async (req, res) => {
     try {
-        const { wardNumber, categoryId } = req.body;
+        const { wardNumber } = req.body;
 
-        if (!wardNumber || !categoryId) {
-            return res.status(400).json({ message: "Ward Number and Category ID must be provided for unassignment." });
+        if (!wardNumber) {
+            return res.status(400).json({ message: "Ward Number must be provided for unassignment." });
         }
 
-        const targetWardString = String(wardNumber);
+        const targetWardString = String(wardNumber).trim();
 
         // Find and delete the specific assignment
         const result = await CollectorAssignment.deleteOne({
-            wardNumber: targetWardString,
-            categoryId: categoryId
+            wardNumber: targetWardString
         });
 
         if (result.deletedCount === 0) {
@@ -136,6 +118,20 @@ router.post("/unassign", isAdmin, async (req, res) => {
     } catch (error) {
         console.error("Error deleting assignment:", error);
         res.status(500).json({ message: "❌ Failed to delete assignment", error: error.message });
+    }
+});
+
+// ✅ Admin: Get all collector assignments
+router.get("/collector-assignments", isAdmin, async (req, res) => {
+    try {
+        const assignments = await CollectorAssignment.find().populate("collectorId", "name email");
+        res.status(200).json({
+            success: true,
+            assignments
+        });
+    } catch (error) {
+        console.error("Error fetching assignments:", error);
+        res.status(500).json({ message: "❌ Failed to fetch assignments", error: error.message });
     }
 });
 

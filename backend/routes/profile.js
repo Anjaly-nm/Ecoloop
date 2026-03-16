@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcryptjs");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs"); // Already imported
@@ -112,6 +113,66 @@ router.put("/profile/:id", upload.single("profilePicture"), async (req, res) => 
         }
         
         res.status(500).json({ message: "❌ Failed to update profile", error: err.message });
+    }
+});
+
+// Change Password
+router.post("/change-password/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: "❌ Both current and new passwords are required" });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: "❌ User not found" });
+        }
+
+        // Check if current password matches
+        if (user.password) {
+            const isMatch = await bcrypt.compare(currentPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).json({ message: "❌ Incorrect current password" });
+            }
+        }
+
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: "✅ Password changed successfully" });
+    } catch (err) {
+        console.error("Error changing password:", err);
+        res.status(500).json({ message: "❌ Failed to change password", error: err.message });
+    }
+});
+
+// Update FCM Token for Push Notifications
+router.post("/fcm-token/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fcmToken } = req.body;
+
+        if (!fcmToken) {
+            return res.status(400).json({ message: "❌ FCM token is required" });
+        }
+
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: "❌ User not found" });
+        }
+
+        user.fcmToken = fcmToken;
+        await user.save();
+
+        res.status(200).json({ message: "✅ FCM token updated successfully" });
+    } catch (err) {
+        console.error("Error updating FCM token:", err);
+        res.status(500).json({ message: "❌ Failed to update FCM token", error: err.message });
     }
 });
 

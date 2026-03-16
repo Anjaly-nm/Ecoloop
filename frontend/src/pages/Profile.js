@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Phone, MapPin, Home, Leaf, Mail, Edit2, Map, Save, X,
   CheckCircle, AlertCircle, Camera, ChevronLeft, Calendar,
-  ShieldCheck, User as UserIcon
+  ShieldCheck, User as UserIcon, Lock, Eye, EyeOff
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,6 +15,11 @@ const Profile = () => {
   const [preview, setPreview] = useState(null);
   const [statusMessage, setStatusMessage] = useState({ type: null, text: null });
   const [isSaving, setIsSaving] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -94,6 +99,39 @@ const Profile = () => {
       setStatusMessage({ type: 'error', text: 'Failed to update profile.' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setStatusMessage({ type: 'error', text: 'New passwords do not match!' });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/user/change-password/${profile._id}`,
+        {
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        },
+        { headers: { token } }
+      );
+
+      setStatusMessage({ type: 'success', text: 'Password changed successfully!' });
+      setShowPasswordForm(false);
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      console.error("Error changing password:", err);
+      setStatusMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Failed to change password.'
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -348,6 +386,109 @@ const Profile = () => {
                         Official Member since {new Date(profile.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                       </p>
                     </div>
+                  </div>
+
+                  <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm overflow-hidden relative group">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-6 bg-purple-500 rounded-full" />
+                        <h2 className="text-sm font-black text-emerald-950 tracking-[0.2em] uppercase">Account Security</h2>
+                      </div>
+                      <button
+                        onClick={() => setShowPasswordForm(!showPasswordForm)}
+                        className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"
+                      >
+                        {showPasswordForm ? "Hide Form" : "Change Password"}
+                      </button>
+                    </div>
+
+                    <AnimatePresence>
+                      {showPasswordForm && (
+                        <motion.form
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="space-y-6 pt-4 border-t border-emerald-50"
+                          onSubmit={handleChangePassword}
+                        >
+                          <div className="grid md:grid-cols-2 gap-6">
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950/40 ml-1">Current Password</label>
+                              <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-950/20 group-focus-within:text-emerald-500 transition-colors">
+                                  <Lock size={16} />
+                                </div>
+                                <input
+                                  type={showCurrentPassword ? "text" : "password"}
+                                  value={passwordData.currentPassword}
+                                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                                  className="w-full pl-12 pr-12 py-4 bg-emerald-50/50 border border-emerald-100 rounded-[1.25rem] text-emerald-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white focus:border-emerald-500 transition-all font-medium"
+                                  placeholder="Enter current password..."
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                  className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-950/20 hover:text-emerald-500 transition-colors"
+                                >
+                                  {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950/40 ml-1">New Password</label>
+                              <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-950/20 group-focus-within:text-emerald-500 transition-colors">
+                                  <Lock size={16} />
+                                </div>
+                                <input
+                                  type={showNewPassword ? "text" : "password"}
+                                  value={passwordData.newPassword}
+                                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                  className="w-full pl-12 pr-12 py-4 bg-emerald-50/50 border border-emerald-100 rounded-[1.25rem] text-emerald-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white focus:border-emerald-500 transition-all font-medium"
+                                  placeholder="Enter new password..."
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowNewPassword(!showNewPassword)}
+                                  className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-950/20 hover:text-emerald-500 transition-colors"
+                                >
+                                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950/40 ml-1">Confirm New Password</label>
+                              <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-950/20 group-focus-within:text-emerald-500 transition-colors">
+                                  <Lock size={16} />
+                                </div>
+                                <input
+                                  type="password"
+                                  value={passwordData.confirmPassword}
+                                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                  className="w-full pl-12 pr-6 py-4 bg-emerald-50/50 border border-emerald-100 rounded-[1.25rem] text-emerald-950 focus:outline-none focus:ring-4 focus:ring-emerald-500/5 focus:bg-white focus:border-emerald-500 transition-all font-medium"
+                                  placeholder="Confirm new password..."
+                                  required
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              type="submit"
+                              disabled={isChangingPassword}
+                              className="px-8 py-3 bg-emerald-950 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-900 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                            >
+                              {isChangingPassword ? "Processing..." : "Update Password"}
+                            </button>
+                          </div>
+                        </motion.form>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               )}

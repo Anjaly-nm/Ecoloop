@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 // Removed FaCheckCircle to fix the ESLint warning
-import { FaUserCircle, FaTrashAlt, FaLeaf, FaChartLine, FaSignOutAlt, FaTasks, FaEnvelope, FaCalendarAlt, FaSyncAlt, FaTruckLoading, FaExclamationTriangle, FaListOl, FaShoppingBag, FaBoxOpen, FaCreditCard, FaMapMarkerAlt } from "react-icons/fa";
+import { FaUserCircle, FaTrashAlt, FaLeaf, FaChartLine, FaSignOutAlt, FaTasks, FaEnvelope, FaCalendarAlt, FaSyncAlt, FaTruckLoading, FaExclamationTriangle, FaListOl, FaShoppingBag, FaBoxOpen, FaCreditCard, FaMapMarkerAlt, FaHistory } from "react-icons/fa";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
@@ -15,23 +15,33 @@ import moment from "moment";
 const SidebarItem = ({ activeTab, tabKey, icon, label, onClick }) => (
     <button
         onClick={() => onClick(tabKey)}
-        className={`flex items-center gap-3 p-3 rounded-lg text-left transition duration-200 w-full ${activeTab === tabKey
-            ? "bg-indigo-600 text-white font-semibold shadow-md"
-            : "text-gray-300 hover:bg-gray-700 hover:text-white"
+        className={`flex items-center gap-4 px-4 py-3 rounded-xl text-left transition-all duration-300 group w-full ${activeTab === tabKey
+            ? "bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-200 translate-x-1"
+            : "text-gray-500 hover:bg-emerald-50 hover:text-emerald-600"
             }`}
     >
-        {icon}
-        <span className="text-base">{label}</span>
+        <span className={`text-xl transition-colors duration-300 ${activeTab === tabKey ? "text-white" : "text-emerald-500 group-hover:text-emerald-600"}`}>
+            {icon}
+        </span>
+        <span className="text-sm font-medium">{label}</span>
     </button>
 );
 
-const StatCard = ({ title, value, icon, textColor }) => (
-    <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 flex items-center justify-between transition duration-300 hover:shadow-lg h-24">
-        <div className="flex flex-col">
-            <h3 className="text-xs font-medium text-gray-500 uppercase">{title}</h3>
-            <p className="text-3xl font-extrabold text-gray-900 mt-1">{value}</p>
+const StatCard = ({ title, value, icon, gradient }) => (
+    <div className={`relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl bg-gradient-to-br ${gradient} text-white`}>
+        <div className="relative z-10 flex flex-col justify-between h-full">
+            <div className="flex items-center justify-between mb-4">
+                <span className="p-2 bg-white/20 rounded-lg backdrop-blur-sm shadow-inner">
+                    {icon}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-90">{title}</span>
+            </div>
+            <div>
+                <p className="text-3xl font-black mb-1">{value}</p>
+                <div className="h-1 w-8 bg-white/30 rounded-full" />
+            </div>
         </div>
-        {icon && React.cloneElement(icon, { className: `${textColor} text-2xl` })}
+        <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-3xl transition-transform duration-500 group-hover:scale-110" />
     </div>
 );
 
@@ -254,104 +264,205 @@ const Dashboard = () => {
     // --- Render Functions for Tabs (Omitted for brevity) ---
 
     const RenderHomeDashboard = () => {
-        const chartColors = ["#4F46E5", "#F59E0B", "#EF4444", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6"];
+        // Calculate Eco Impact
+        const collectedWeight = submissions
+            .filter(s => s.status === "collected" && s.weight)
+            .reduce((sum, s) => sum + parseFloat(s.weight || 0), 0);
+
+        const co2Saved = (collectedWeight * 2.5).toFixed(1); // 2.5kg CO2 per kg waste recycled
+        const treesSaved = (collectedWeight * 0.05).toFixed(2); // Symbolic metric
+
+        const recentActivity = [...submissions]
+            .sort((a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date))
+            .slice(0, 4);
+
+        const upcomingPickups = submissions
+            .filter(s => (s.status === "pending" || s.status === "approved" || s.status === "new"))
+            .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))
+            .slice(0, 3);
 
         return (
-            <div className="space-y-8">
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-10 animate-fadeIn">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard
                         title="Total Submissions"
                         value={totalSubmissions}
-                        icon={<FaTasks />}
-                        textColor="text-indigo-500"
+                        icon={<FaBoxOpen className="text-xl" />}
+                        gradient="from-emerald-500 to-emerald-700"
                     />
-
-                    <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 flex items-center justify-around h-24">
-                        <div className="flex flex-col">
-                            <h3 className="text-xs font-medium text-gray-500 uppercase">Submission Completion</h3>
-                            <p className="text-xl font-extrabold text-gray-900 mt-1">{completedSubmissions} / {totalSubmissions}</p>
+                    <StatCard
+                        title="Completed"
+                        value={completedSubmissions}
+                        icon={<FaTasks className="text-xl" />}
+                        gradient="from-teal-500 to-emerald-600"
+                    />
+                    <div className="relative overflow-hidden rounded-2xl p-6 shadow-lg bg-white border border-gray-100 flex items-center justify-between hover:shadow-xl transition-all duration-300">
+                        <div className="relative z-10">
+                            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Completion Rate</h3>
+                            <p className="text-3xl font-black text-emerald-600">{completionPercentage}%</p>
                         </div>
-                        <div className="w-12 h-12">
+                        <div className="w-16 h-16 transform hover:scale-110 transition-transform duration-300">
                             <CircularProgressbar
                                 value={completionPercentage}
                                 text={`${completionPercentage}%`}
                                 styles={buildStyles({
-                                    pathColor: "#4F46E5",
-                                    textColor: "#1F2937",
-                                    trailColor: "#E5E7EB",
+                                    pathColor: "#10b981",
+                                    textColor: "#064e3b",
+                                    trailColor: "#ecfdf5",
                                     strokeLinecap: "round",
                                     textSize: '28px',
                                 })}
                             />
                         </div>
                     </div>
-
                     <StatCard
-                        title="EcoPoints Earned"
+                        title="EcoPoints Balance"
                         value={ecoPoints}
-                        icon={<FaLeaf />}
-                        textColor="text-green-500"
+                        icon={<FaLeaf className="text-xl" />}
+                        gradient="from-lime-500 to-emerald-500"
                     />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-md border border-gray-100">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                            <FaChartLine className="text-indigo-600" /> Waste Type Collection Trend
+                {/* Eco Impact Summary */}
+                <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-forest-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-3xl transition-all duration-700 group-hover:scale-110" />
+                    <div className="relative z-10">
+                        <h3 className="text-2xl font-black mb-6 flex items-center gap-3">
+                            <span className="p-2 bg-emerald-700/50 rounded-lg"><FaChartLine /></span>
+                            Your Eco Impact Summary
                         </h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={aggregatedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                                <XAxis dataKey="date" stroke="#6b7280" />
-                                <YAxis allowDecimals={false} domain={[0, 'auto']} stroke="#6b7280" />
-                                <Tooltip
-                                    formatter={(value, name) => [`${value} Collections`, name]}
-                                />
-                                <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all">
+                                <p className="text-emerald-300 text-xs font-bold uppercase mb-2">Total Recycled</p>
+                                <p className="text-4xl font-black">{collectedWeight.toFixed(1)} <span className="text-xl font-normal opacity-70">kg</span></p>
+                                <div className="mt-4 flex items-center text-emerald-400 text-sm gap-1">
+                                    <FaTrashAlt /> Helping the planet
+                                </div>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all">
+                                <p className="text-emerald-300 text-xs font-bold uppercase mb-2">CO2 Emissions Saved</p>
+                                <p className="text-4xl font-black">{co2Saved} <span className="text-xl font-normal opacity-70">kg</span></p>
+                                <div className="mt-4 flex items-center text-emerald-400 text-sm gap-1">
+                                    <FaLeaf /> Net positive change
+                                </div>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all">
+                                <p className="text-emerald-300 text-xs font-bold uppercase mb-2">Forest Equivalent</p>
+                                <p className="text-4xl font-black">{treesSaved} <span className="text-xl font-normal opacity-70">trees</span></p>
+                                <div className="mt-4 flex items-center text-emerald-400 text-sm gap-1">
+                                    <FaUserCircle /> Sustainability hero
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                                {uniqueCategoryNames.map((category, index) => {
-                                    const color = chartColors[index % chartColors.length];
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Recent & Upcoming */}
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Upcoming Pickups */}
+                        <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 transition-all hover:shadow-2xl">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                    <span className="p-2 bg-amber-100 text-amber-600 rounded-lg"><FaTruckLoading /></span>
+                                    Upcoming Pickups
+                                </h3>
+                                <button onClick={() => setActiveTab("submit")} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-widest">+ Schedule New</button>
+                            </div>
+                            <div className="space-y-4">
+                                {upcomingPickups.length > 0 ? upcomingPickups.map((s, i) => (
+                                    <div key={i} className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 hover:border-emerald-200 transition-all group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="bg-white p-3 rounded-xl shadow-sm text-center min-w-16">
+                                                <p className="text-[10px] uppercase font-bold text-gray-400">{moment(s.scheduled_date).format('MMM')}</p>
+                                                <p className="text-xl font-black text-emerald-600">{moment(s.scheduled_date).format('DD')}</p>
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-gray-800">{s.category}</p>
+                                                <p className="text-xs text-gray-500">{moment(s.scheduled_date).format('h:mm A')}</p>
+                                            </div>
+                                        </div>
+                                        <span className="px-3 py-1 bg-white text-emerald-700 text-[10px] font-black uppercase rounded-full shadow-sm">
+                                            {s.status}
+                                        </span>
+                                    </div>
+                                )) : (
+                                    <div className="text-center py-10">
+                                        <p className="text-gray-400 italic">No upcoming pickups scheduled.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                                    return (
-                                        <React.Fragment key={category}>
-                                            <defs>
-                                                <linearGradient id={`color${category.replace(/\s/g, "")}`} x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor={color} stopOpacity={0.4} />
-                                                    <stop offset="95%" stopColor={color} stopOpacity={0.0} />
-                                                </linearGradient>
-                                            </defs>
-
-                                            <Area
-                                                type="bump"
-                                                dataKey={category}
-                                                stroke={color}
-                                                strokeWidth={2}
-                                                fill={`url(#color${category.replace(/\s/g, "")})`}
-                                                fillOpacity={0.8}
-                                                name={category}
-                                            />
-                                        </React.Fragment>
-                                    );
-                                })}
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        {/* Recent Activity */}
+                        <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 transition-all hover:shadow-2xl">
+                            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <span className="p-2 bg-emerald-100 text-emerald-600 rounded-lg"><FaHistory /></span>
+                                Recent Activity
+                            </h3>
+                            <div className="space-y-3">
+                                {recentActivity.length > 0 ? recentActivity.map((s, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg ${s.status === 'collected' ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                <FaTasks />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-800">{s.category} Submission</p>
+                                                <p className="text-[10px] text-gray-400 font-medium uppercase">{moment(s.scheduled_date).fromNow()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${s.status === 'collected' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>
+                                                {s.status}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )) : <p className="text-gray-400 italic text-center py-4">No recent activity.</p>}
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 flex flex-col items-center">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2"><FaCalendarAlt className="text-indigo-600" /> Key Dates</h3>
-                        <div className="w-full">
-                            <Calendar
-                                className="w-full border-none shadow-none text-gray-700"
-                                tileClassName={({ date }) => {
-                                    const isScheduled = submissions.some(s => new Date(s.scheduled_date).toDateString() === date.toDateString());
-                                    if (isScheduled) {
-                                        return "bg-indigo-500 text-white font-semibold rounded-full !p-2 !m-1";
-                                    }
-                                    return "";
-                                }}
-                            />
+                    {/* Calendar Section */}
+                    <div className="space-y-8">
+                        <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
+                            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <span className="p-2 bg-indigo-100 text-indigo-600 rounded-lg"><FaCalendarAlt /></span>
+                                Schedule
+                            </h3>
+                            <div className="dashboard-calendar">
+                                <Calendar
+                                    className="w-full border-none text-gray-700 font-sans"
+                                    tileClassName={({ date }) => {
+                                        const isScheduled = submissions.some(s => new Date(s.scheduled_date).toDateString() === date.toDateString());
+                                        const isCollected = submissions.some(s => s.status === 'collected' && new Date(s.scheduled_date).toDateString() === date.toDateString());
+
+                                        if (isCollected) return "collected-date";
+                                        if (isScheduled) return "scheduled-date";
+                                        return null;
+                                    }}
+                                />
+                            </div>
+                            <div className="mt-6 flex justify-around text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Collected</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span> Scheduled</span>
+                            </div>
+                        </div>
+
+                        {/* Quick Action */}
+                        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden group">
+                            <div className="relative z-10">
+                                <h4 className="font-black text-lg mb-2">Need Immediate Help?</h4>
+                                <p className="text-indigo-100 text-xs mb-6 leading-relaxed">Request an emergency pickup for overflowing bins or large debris.</p>
+                                <button
+                                    onClick={() => setActiveTab("immediate")}
+                                    className="w-full py-3 bg-white text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-all transform hover:scale-[1.02]"
+                                >
+                                    Express Pickup
+                                </button>
+                            </div>
+                            <FaExclamationTriangle className="absolute -right-4 -bottom-4 text-7xl text-white/10 rotate-12 transition-transform duration-500 group-hover:rotate-0" />
                         </div>
                     </div>
                 </div>
@@ -438,61 +549,88 @@ const Dashboard = () => {
 
     // --- Main Render (Omitted for brevity) ---
     return (
-        <div className="flex h-screen bg-gray-50 font-sans antialiased">
-            <aside className="w-64 bg-gray-800 shadow-2xl flex flex-col p-5">
-                <h1 className="text-2xl font-bold text-white mb-10 border-b border-gray-700 pb-4">
-                    <span className="text-indigo-400">Eco</span>Waste
-                </h1>
-                <nav className="flex flex-col gap-2 flex-grow">
-                    <SidebarItem tabKey="home" icon={<FaChartLine />} label="Dashboard Overview" activeTab={activeTab} onClick={setActiveTab} />
+        <div className="flex h-screen bg-gray-50 font-sans antialiased text-gray-900">
+            <style>{`
+                .animate-fadeIn { animation: fadeIn 0.6s ease-out; }
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                
+                .dashboard-calendar .react-calendar {
+                    border: none;
+                    width: 100%;
+                }
+                .dashboard-calendar .react-calendar__tile {
+                    padding: 12px 6px;
+                    font-size: 0.8rem;
+                    border-radius: 12px;
+                }
+                .dashboard-calendar .scheduled-date {
+                    background: #fbbf24 !important;
+                    color: white !important;
+                    font-weight: 800;
+                    box-shadow: 0 4px 6px -1px rgba(251, 191, 36, 0.4);
+                }
+                .dashboard-calendar .collected-date {
+                    background: #10b981 !important;
+                    color: white !important;
+                    font-weight: 800;
+                    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+                }
+            `}</style>
 
-                    <SidebarItem
-                        tabKey="submit"
-                        icon={<FaTasks />}
-                        label="Standard Pickup"
-                        activeTab={activeTab}
-                        onClick={setActiveTab}
-                    />
+            <aside className="w-72 bg-white border-r border-gray-100 shadow-xl flex flex-col p-6 z-20">
+                <div className="flex items-center gap-3 mb-12 px-2">
+                    <div className="p-3 bg-emerald-600 rounded-2xl shadow-lg shadow-emerald-200">
+                        <FaLeaf className="text-white text-2xl" />
+                    </div>
+                    <h1 className="text-2xl font-black tracking-tighter text-emerald-900">
+                        EcoLoop
+                    </h1>
+                </div>
 
-                    <SidebarItem
-                        tabKey="immediate"
-                        icon={<FaTruckLoading />}
-                        label="Immediate Pickup"
-                        activeTab={activeTab}
-                        onClick={setActiveTab}
-                    />
+                <nav className="flex flex-col gap-3 flex-grow">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 px-4">Menu</p>
+                    <SidebarItem tabKey="home" icon={<FaChartLine />} label="Dashboard" activeTab={activeTab} onClick={setActiveTab} />
+                    <SidebarItem tabKey="submit" icon={<FaTasks />} label="Schedule Pickup" activeTab={activeTab} onClick={setActiveTab} />
+                    <SidebarItem tabKey="immediate" icon={<FaTruckLoading />} label="Express Pickup" activeTab={activeTab} onClick={setActiveTab} />
+                    <SidebarItem tabKey="view" icon={<FaTrashAlt />} label="All Submissions" activeTab={activeTab} onClick={setActiveTab} />
 
-                    <SidebarItem tabKey="view" icon={<FaTrashAlt />} label="View Submissions" activeTab={activeTab} onClick={setActiveTab} />
-                    <SidebarItem tabKey="orders" icon={<FaShoppingBag />} label="My Orders" activeTab={activeTab} onClick={setActiveTab} />
-                    <SidebarItem tabKey="ecopoints" icon={<FaLeaf />} label="EcoPoints Rewards" activeTab={activeTab} onClick={setActiveTab} />
+                    <div className="my-6 border-t border-gray-50" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 px-4">Account</p>
+                    <SidebarItem tabKey="ecopoints" icon={<FaLeaf />} label="Rewards Program" activeTab={activeTab} onClick={setActiveTab} />
                 </nav>
+
                 <button
                     onClick={handleLogout}
-                    className="flex items-center justify-center gap-2 p-3 mt-4 bg-gray-700 text-gray-300 rounded-lg hover:bg-red-600 hover:text-white transition duration-200"
+                    className="flex items-center gap-4 px-4 py-4 mt-4 bg-red-50 text-red-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all duration-300 transform active:scale-95"
                 >
-                    <FaSignOutAlt />
-                    <span>Logout</span>
+                    <FaSignOutAlt className="text-lg" />
+                    <span>Logout System</span>
                 </button>
             </aside>
 
-            <main className="flex-1 p-8 overflow-y-auto">
-                <header className="flex justify-between items-center mb-8 pb-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                        <FaUserCircle className="text-indigo-600 text-3xl" />
-                        <h2 className="text-3xl font-bold text-gray-800">Welcome back, {username}</h2>
+            <main className="flex-1 p-10 overflow-y-auto">
+                <header className="flex justify-between items-end mb-12 animate-fadeIn">
+                    <div>
+                        <p className="text-emerald-600 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Live Dashboard
+                        </p>
+                        <h2 className="text-4xl font-black text-gray-900 tracking-tight">Eco-friendly Morning, {username}.</h2>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6">
                         <button
                             onClick={handleRefresh}
                             disabled={isLoading}
-                            className={`flex items-center gap-2 p-2 rounded-lg text-gray-600 border border-gray-200 transition duration-200
-                ${isLoading ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-indigo-50 hover:text-indigo-600'}`}
-                            title="Refresh Data"
+                            className={`flex items-center gap-3 px-5 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all
+                            ${isLoading ? 'bg-gray-100 text-gray-400' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:shadow-md active:scale-95'}`}
                         >
                             <FaSyncAlt className={isLoading ? "animate-spin" : ""} />
-                            {isLoading ? 'Refreshing...' : 'Refresh'}
+                            {isLoading ? 'Syncing...' : 'Sync Data'}
                         </button>
-                        <FaEnvelope className="text-gray-600 text-xl hover:text-indigo-600 transition cursor-pointer" />
+                        <div className="relative p-3 bg-white rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:shadow-xl transition-all">
+                            <FaEnvelope className="text-emerald-600 text-xl" />
+                            <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-4 border-white rounded-full"></span>
+                        </div>
                     </div>
                 </header>
 
@@ -585,132 +723,6 @@ const Dashboard = () => {
                     </div>
                 )}
 
-                {/* My Orders Tab */}
-                {activeTab === "orders" && (
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-xl p-8 shadow-md border border-gray-100 overflow-x-auto">
-                            <h3 className="text-xl font-semibold text-gray-700 mb-6 border-b pb-2 flex items-center gap-2">
-                                <FaShoppingBag className="text-indigo-600" /> Your Purchase History
-                            </h3>
-                            {orders.length ? (
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {orders.map((order) => (
-                                            <tr key={order._id} className="hover:bg-indigo-50 transition duration-150 cursor-pointer" onClick={() => setSelectedOrder(selectedOrder?._id === order._id ? null : order)}>
-                                                <td className="px-4 py-4 whitespace-nowrap text-xs font-mono text-gray-500">#{order._id.slice(-8).toUpperCase()}</td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{moment(order.createdAt).format('MMM DD, YYYY')}</td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">₹{order.totalAmount}</td>
-                                                <td className="px-4 py-4 whitespace-nowrap">
-                                                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                                                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500 uppercase">{order.paymentMethod}</td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-indigo-600 font-medium">
-                                                    {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            ) : <p className="text-gray-500 italic">No orders found.</p>}
-                        </div>
-
-                        {/* Order Details Modal/Expandable Section */}
-                        {selectedOrder && (
-                            <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-indigo-100 animate-fadeIn">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h4 className="text-2xl font-black text-gray-900">Order Details</h4>
-                                        <p className="text-sm text-gray-500 font-mono mt-1">ID: #{selectedOrder._id}</p>
-                                    </div>
-                                    <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 rounded-full transition">
-                                        <FaExclamationTriangle className="text-gray-400" />
-                                    </button>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* Left: Cart Details (Items) */}
-                                    <div className="space-y-4">
-                                        <h5 className="font-bold text-gray-700 flex items-center gap-2">
-                                            <FaBoxOpen className="text-indigo-500" /> Items in Cart
-                                        </h5>
-                                        <div className="space-y-3">
-                                            {selectedOrder.items.map((item, idx) => (
-                                                <div key={idx} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                                    <img
-                                                        src={item.image.startsWith('http') ? item.image : `${process.env.REACT_APP_API_URL}/${item.image}`}
-                                                        alt={item.name}
-                                                        className="w-16 h-16 rounded-lg object-cover shadow-sm bg-white"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <p className="font-bold text-gray-900">{item.name}</p>
-                                                        <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="font-black text-indigo-600">₹{item.price * item.quantity}</p>
-                                                        <p className="text-[10px] text-gray-400">₹{item.price} each</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="p-4 bg-indigo-600 text-white rounded-2xl flex justify-between items-center shadow-lg shadow-indigo-200">
-                                            <span className="font-bold uppercase tracking-widest text-xs">Total Amount Paid</span>
-                                            <span className="text-2xl font-black">₹{selectedOrder.totalAmount}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Right: Shipping & Payment */}
-                                    <div className="space-y-6">
-                                        <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
-                                            <h5 className="font-bold text-gray-700 flex items-center gap-2 mb-3">
-                                                <FaMapMarkerAlt className="text-emerald-500" /> Shipping Address
-                                            </h5>
-                                            <p className="text-sm text-gray-600 leading-relaxed">
-                                                {selectedOrder.shippingAddress}
-                                            </p>
-                                        </div>
-
-                                        <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
-                                            <h5 className="font-bold text-gray-700 flex items-center gap-2 mb-3">
-                                                <FaCreditCard className="text-blue-500" /> Payment Info
-                                            </h5>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs font-bold text-gray-400 uppercase">Method</span>
-                                                <span className="text-sm font-black text-gray-800 uppercase">{selectedOrder.paymentMethod}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
-                                                <span className="text-xs font-bold text-gray-400 uppercase">Transaction ID</span>
-                                                <span className="text-xs font-mono text-gray-600">{selectedOrder.paymentId || 'N/A'}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
-                                            <div>
-                                                <h5 className="font-bold text-emerald-900 text-sm">Eco-Impact</h5>
-                                                <p className="text-xs text-emerald-600">Sustainability points earned from this order</p>
-                                            </div>
-                                            <div className="text-center">
-                                                <FaLeaf className="text-emerald-500 mx-auto" />
-                                                <span className="font-black text-emerald-700">+{Math.floor(selectedOrder.totalAmount / 10)} pts</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {/* EcoPoints Tab */}
                 {activeTab === "ecopoints" && (
