@@ -1,0 +1,6 @@
+StatusCode from Vercel: 500
+A server error has occurred
+
+FUNCTION_INVOCATION_FAILED
+
+bom1::mxwbb-1773653009470-3f59bf3dd8de

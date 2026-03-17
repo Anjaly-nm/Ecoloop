@@ -1,0 +1,278 @@
+{
+  "user": {
+    "baseSalary": 20000,
+    "perDeliveryIncentive": 50,
+    "_id": "68fb46a8895ba2c1a2de9938",
+    "name": "Akshaya sabu",
+    "username": "achuakshaya2668",
+    "email": "achuakshaya2668@gmail.com",
+    "password": "$2a$10$xM3PJvCvDOosHI2T9evMw.ZxMoJVFXUc8321N4Xi368Ha8BTauxmO",
+    "phone": "8606878986",
+    "address": "Erumely",
+    "role": "collector",
+    "ecoPoints": 0,
+    "createdAt": "2025-10-24T09:28:08.085Z",
+    "updatedAt": "2025-10-24T09:28:08.085Z",
+    "__v": 0
+  },
+  "wards": [
+    {
+      "_id": "69393c2f21f7b8c978800f1f",
+      "categoryId": "68d502b587187a8dbc4f2d63",
+      "wardNumber": "9",
+      "__v": 0,
+      "collectorId": "68fb46a8895ba2c1a2de9938"
+    }
+  ],
+  "assignedSubmissions": [
+    {
+      "_id": "68fe776eee09bfde6d80036e",
+      "user_id": "68f72a137285f1885aee6cdf",
+      "category": "Plastic",
+      "category_id": {
+        "_id": "68d502b587187a8dbc4f2d63",
+        "name": "Plastic",
+        "description": "Bottles, containers, packaging, and other recyclable plastic materials",
+        "createdAt": "2025-09-25T08:52:05.174Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-10-26T19:33:02.095Z",
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-10-26T19:33:02.275Z",
+      "updatedAt": "2025-10-27T09:17:50.965Z",
+      "__v": 0,
+      "is_immediate": false
+    },
+    {
+      "_id": "69312f004dfc9a4738574843",
+      "user_id": "68d5786da859be995d5a2471",
+      "category": "Organic",
+      "category_id": {
+        "_id": "68d0292cdc91d4b39bd7b8d0",
+        "name": "Organic",
+        "description": "Food waste, garden waste, and other biodegradable materials",
+        "createdAt": "2025-09-21T16:34:52.406Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-04T06:49:36.894Z",
+      "is_immediate": true,
+      "weight": 0.1,
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-12-04T06:49:36.957Z",
+      "updatedAt": "2025-12-04T06:52:38.073Z",
+      "__v": 0
+    },
+    {
+      "_id": "69326167b349998d2cfe5037",
+      "user_id": "68fcc07c345a4f135ad1cb1b",
+      "category": "Paper",
+      "category_id": {
+        "_id": "68d02921dc91d4b39bd7b8cc",
+        "name": "Paper",
+        "description": "Newspapers, office paper, cardboard, and packaging materials",
+        "createdAt": "2025-09-21T16:34:41.043Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-05T04:36:54.772Z",
+      "is_immediate": true,
+      "weight": 0.1,
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-12-05T04:36:55.014Z",
+      "updatedAt": "2025-12-05T04:38:11.106Z",
+      "__v": 0
+    },
+    {
+      "_id": "6933121f6fe056bdac8c9d3e",
+      "user_id": "68f87425cb35e9c05b50eb7a",
+      "category": "Organic",
+      "category_id": {
+        "_id": "68d0292cdc91d4b39bd7b8d0",
+        "name": "Organic",
+        "description": "Food waste, garden waste, and other biodegradable materials",
+        "createdAt": "2025-09-21T16:34:52.406Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-05T17:10:55.321Z",
+      "is_immediate": true,
+      "weight": 0.1,
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-12-05T17:10:55.456Z",
+      "updatedAt": "2025-12-05T18:01:01.233Z",
+      "__v": 0
+    },
+    {
+      "_id": "693324577afc9a36e3964c35",
+      "user_id": "68fcc07c345a4f135ad1cb1b",
+      "category": "Organic",
+      "category_id": {
+        "_id": "68d0292cdc91d4b39bd7b8d0",
+        "name": "Organic",
+        "description": "Food waste, garden waste, and other biodegradable materials",
+        "createdAt": "2025-09-21T16:34:52.406Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-05T18:28:39.134Z",
+      "is_immediate": false,
+      "weight": null,
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-12-05T18:28:39.451Z",
+      "updatedAt": "2025-12-05T18:36:16.679Z",
+      "__v": 0
+    },
+    {
+      "_id": "693324857afc9a36e3964c56",
+      "user_id": "68fcc07c345a4f135ad1cb1b",
+      "category": "Organic",
+      "category_id": {
+        "_id": "68d0292cdc91d4b39bd7b8d0",
+        "name": "Organic",
+        "description": "Food waste, garden waste, and other biodegradable materials",
+        "createdAt": "2025-09-21T16:34:52.406Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-05T18:29:25.235Z",
+      "is_immediate": false,
+      "weight": null,
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-12-05T18:29:25.568Z",
+      "updatedAt": "2025-12-05T18:36:18.403Z",
+      "__v": 0
+    },
+    {
+      "_id": "69392b8c6938fb1fbd2881e1",
+      "user_id": "68d5786da859be995d5a2471",
+      "category": "Organic",
+      "category_id": {
+        "_id": "68d0292cdc91d4b39bd7b8d0",
+        "name": "Organic",
+        "description": "Food waste, garden waste, and other biodegradable materials",
+        "createdAt": "2025-09-21T16:34:52.406Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-10T08:08:55.267Z",
+      "is_immediate": false,
+      "weight": null,
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-12-10T08:13:00.885Z",
+      "updatedAt": "2025-12-16T10:35:26.516Z",
+      "__v": 0
+    },
+    {
+      "_id": "693938f56938fb1fbd28823b",
+      "user_id": "68d5786da859be995d5a2471",
+      "category": "Organic",
+      "category_id": {
+        "_id": "68d0292cdc91d4b39bd7b8d0",
+        "name": "Organic",
+        "description": "Food waste, garden waste, and other biodegradable materials",
+        "createdAt": "2025-09-21T16:34:52.406Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-10T09:10:12.744Z",
+      "is_immediate": false,
+      "weight": null,
+      "status": "approved",
+      "pendingReason": "",
+      "createdAt": "2025-12-10T09:10:13.101Z",
+      "updatedAt": "2025-12-10T09:10:13.101Z",
+      "__v": 0
+    },
+    {
+      "_id": "69395250f9e95a5468ca61b7",
+      "user_id": "68f514996d76b4da197bdd14",
+      "category": "Organic",
+      "category_id": {
+        "_id": "68d0292cdc91d4b39bd7b8d0",
+        "name": "Organic",
+        "description": "Food waste, garden waste, and other biodegradable materials",
+        "createdAt": "2025-09-21T16:34:52.406Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-10T10:57:53.493Z",
+      "is_immediate": false,
+      "weight": null,
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-12-10T10:58:24.412Z",
+      "updatedAt": "2025-12-20T08:24:10.196Z",
+      "__v": 0
+    },
+    {
+      "_id": "693fc638a1e4ac0a9a3d2e7a",
+      "user_id": "693ba512512df0083b175c7c",
+      "category": "Organic",
+      "category_id": {
+        "_id": "68d0292cdc91d4b39bd7b8d0",
+        "name": "Organic",
+        "description": "Food waste, garden waste, and other biodegradable materials",
+        "createdAt": "2025-09-21T16:34:52.406Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2025-12-15T08:26:32.488Z",
+      "is_immediate": false,
+      "weight": null,
+      "status": "collected",
+      "pendingReason": "",
+      "createdAt": "2025-12-15T08:26:32.739Z",
+      "updatedAt": "2025-12-16T10:36:24.783Z",
+      "__v": 0
+    },
+    {
+      "_id": "69ae92e7751707fa8f7d6497",
+      "user_id": "6943d944b137789356c743cb",
+      "category": "Plastic",
+      "category_id": {
+        "_id": "68d502b587187a8dbc4f2d63",
+        "name": "Plastic",
+        "description": "Bottles, containers, packaging, and other recyclable plastic materials",
+        "createdAt": "2025-09-25T08:52:05.174Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2026-03-09T09:29:11.534Z",
+      "is_immediate": false,
+      "status": "approved",
+      "pendingReason": "",
+      "createdAt": "2026-03-09T09:29:11.759Z",
+      "updatedAt": "2026-03-09T09:29:11.759Z",
+      "__v": 0
+    },
+    {
+      "_id": "69b0e83d3de5fb23f55097a8",
+      "user_id": "6943d944b137789356c743cb",
+      "category": "Paper",
+      "category_id": {
+        "_id": "68d02921dc91d4b39bd7b8cc",
+        "name": "Paper",
+        "description": "Newspapers, office paper, cardboard, and packaging materials",
+        "createdAt": "2025-09-21T16:34:41.043Z",
+        "__v": 0
+      },
+      "collector_id": "68fb46a8895ba2c1a2de9938",
+      "scheduled_date": "2026-03-11T03:57:49.084Z",
+      "is_immediate": false,
+      "status": "approved",
+      "pendingReason": "",
+      "createdAt": "2026-03-11T03:57:49.339Z",
+      "updatedAt": "2026-03-11T03:57:49.339Z",
+      "__v": 0
+    }
+  ]
+}

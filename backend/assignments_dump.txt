@@ -1,0 +1,23 @@
+[
+  {
+    "_id": "6939293021f7b8c978800d3e",
+    "categoryId": "68d0292cdc91d4b39bd7b8d0",
+    "wardNumber": "2",
+    "__v": 0,
+    "collectorId": "68d5147d26f80d678efb6831"
+  },
+  {
+    "_id": "69393c2f21f7b8c978800f1f",
+    "categoryId": "68d502b587187a8dbc4f2d63",
+    "wardNumber": "9",
+    "__v": 0,
+    "collectorId": "68fb46a8895ba2c1a2de9938"
+  },
+  {
+    "_id": "69467d3b7ff076c02aa7048c",
+    "categoryId": "68d0292cdc91d4b39bd7b8d0",
+    "wardNumber": "3",
+    "__v": 0,
+    "collectorId": "68d5147d26f80d678efb6831"
+  }
+]

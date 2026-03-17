@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "775238710665",
+    "project_id": "ecoloopmob",
+    "storage_bucket": "ecoloopmob.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775238710665:android:058a87567224b9b6e69d58",
+        "android_client_info": {
+          "package_name": "com.example.ecoloop_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3PJDdOcpsNqVCW3IC7fKOTegRYGaXXNk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

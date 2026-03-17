@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { User, Mail, Lock, Phone, MapPin, Home, Map, Upload, ArrowRight, Check, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import '../styles/register.css';
 
 // NOTE: Set your API URL here
@@ -17,16 +18,14 @@ const Registration = () => {
         password: '',
         phone: '',
         address: '',
-        // role, collectorId, houseNumber, and ward removed from state 
-        // as they are no longer user-selectable or needed for other roles.
         houseNumber: '',
         ward: '' // Sent as 'wardNumber' to the backend
     });
     const [errorMsg, setErrorMsg] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        // Role change logic is now irrelevant, just update the state
         setFormData({ ...formData, [name]: value });
     };
 
@@ -37,35 +36,44 @@ const Registration = () => {
     const handleRegister = async (e) => {
         e.preventDefault();
         setErrorMsg(''); // Clear previous errors
+        setIsLoading(true);
 
         // --- VALIDATION ---
         const nameRegex = /^[A-Za-z\s]+$/;
         const emailRegex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|yahoo\.com|outlook\.com)$/;
         const passwordRegex = /^.{6,8}$/;
+        const phoneRegex = /^\d{10}$/;
 
-        // 🔑 Updated required fields check (role removed)
         if (!formData.name || !formData.username || !formData.email || !formData.password || !formData.phone || !formData.address || !formData.houseNumber.trim() || !formData.ward.trim()) {
-            alert('Please fill all required fields, including House Number and Ward.');
+            setErrorMsg('Please fill all required fields, including House Number and Ward.');
+            setIsLoading(false);
             return;
         }
 
         if (!nameRegex.test(formData.name)) {
-            alert('Name should contain only letters and spaces.');
+            setErrorMsg('Name should contain only letters and spaces.');
+            setIsLoading(false);
             return;
         }
 
         if (!emailRegex.test(formData.email)) {
-            alert('Please provide a valid email (gmail, yahoo, outlook).');
+            setErrorMsg('Please provide a valid email (gmail, yahoo, outlook).');
+            setIsLoading(false);
             return;
         }
 
         if (!passwordRegex.test(formData.password)) {
-            alert('Password must be 6 to 8 characters long.');
+            setErrorMsg('Password must be 6 to 8 characters long.');
+            setIsLoading(false);
             return;
         }
 
-        // Conditional validation for 'collectorId' is removed, but the 'user' specific fields 
-        // (houseNumber, ward) are still validated above as they are now always required.
+        if (!phoneRegex.test(formData.phone)) {
+            setErrorMsg('Phone number must be exactly 10 digits.');
+            setIsLoading(false);
+            return;
+        }
+
         // --- END VALIDATION ---
 
         // 2. Prepare FormData for submission
@@ -83,7 +91,6 @@ const Registration = () => {
 
         // 🔑 Append the hardcoded default role
         data.append('role', DEFAULT_ROLE);
-        // 🔑 Remove collectorId append since the user is always a 'user'
 
         // Append the file
         if (profilePictureFile) {
@@ -107,76 +114,108 @@ const Registration = () => {
                 });
                 setProfilePictureFile(null); // Reset file state
             } else {
-                alert(responseData.message || 'Registration failed');
+                setErrorMsg(responseData.message || 'Registration failed');
             }
         } catch (err) {
             console.error('Error connecting to server:', err);
-            alert('Error connecting to server. Please try again.');
+            setErrorMsg('Error connecting to server. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
         <div className="register-page">
-            <div className="register-image">
-                <img src="/images/y2.jpg" alt="EcoLoop" />
+            <div className="register-image" style={{ backgroundImage: "url('/images/y2.jpg')" }}>
+                <div className="register-image-content">
+                    <h1>Join the Green Revolution</h1>
+                    <p>Be part of a community dedicated to a cleaner, greener, and more sustainable future. Every action counts.</p>
+                    
+                    <ul className="features-list">
+                        <li>
+                            <div className="circle-check"><Check size={16} /></div>
+                            Eco-friendly waste tracking
+                        </li>
+                        <li>
+                            <div className="circle-check"><Check size={16} /></div>
+                            Earn rewards for recycling
+                        </li>
+                        <li>
+                            <div className="circle-check"><Check size={16} /></div>
+                            Real-time collector updates
+                        </li>
+                    </ul>
+                </div>
             </div>
 
             <div className="register-form-container">
                 <form className="register-form" onSubmit={handleRegister}>
-                    <h2>🌿 Join <span>EcoLoop</span></h2>
-                    <p className="form-subtitle">Create your account to start your eco journey</p>
+                    <h2>Create <span>Account</span></h2>
+                    <p className="form-subtitle">Enter your details to get started with EcoLoop</p>
 
-                    <div className="form-group">
-                        <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                    {errorMsg && (
+                        <div className="error-message">
+                            <AlertCircle size={18} />
+                            <span>{errorMsg}</span>
+                        </div>
+                    )}
+
+                    <div className="form-grid">
+                        <div className="form-group full-width">
+                            <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                            <User className="input-icon" />
+                        </div>
+
+                        <div className="form-group">
+                            <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} required />
+                            <User className="input-icon" />
+                        </div>
+
+                        <div className="form-group">
+                            <input type="tel" name="phone" placeholder="Phone Number (10 digits)" value={formData.phone} onChange={handleChange} maxLength="10" required />
+                            <Phone className="input-icon" />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} required />
+                            <Mail className="input-icon" />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <input type="password" name="password" placeholder="Password (6-8 chars)" value={formData.password} onChange={handleChange} required />
+                            <Lock className="input-icon" />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <input type="text" name="address" placeholder="Full Address" value={formData.address} onChange={handleChange} required />
+                            <MapPin className="input-icon" />
+                        </div>
+
+                        <div className="form-group">
+                            <input type="text" name="houseNumber" placeholder="House No." value={formData.houseNumber} onChange={handleChange} required />
+                            <Home className="input-icon" />
+                        </div>
+
+                        <div className="form-group">
+                            <input type="text" name="ward" placeholder="Ward No." value={formData.ward} onChange={handleChange} required />
+                            <Map className="input-icon" />
+                        </div>
+
+                        <div className="form-group full-width">
+                            <div className="file-upload-wrapper">
+                                <label htmlFor="profilePicture">
+                                    {profilePictureFile ? <ImageIcon className="file-icon" /> : <Upload className="file-icon" />}
+                                    <span>{profilePictureFile ? profilePictureFile.name : 'Upload Profile Picture (Optional)'}</span>
+                                </label>
+                                <input type="file" id="profilePicture" name="profilePicture" onChange={handleFileChange} accept="image/*" />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="form-group">
-                        <input
-                            type="text"
-                            name="username"
-                            placeholder="Username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
-                    </div>
-
-                    <div className="form-group">
-                        <input type="password" name="password" placeholder="Password (6-8 characters)" value={formData.password} onChange={handleChange} required />
-                    </div>
-
-                    <div className="form-group">
-                        <input type="text" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} required />
-                    </div>
-
-                    {/* Profile Picture Input */}
-                    <div className="form-group">
-                        <label htmlFor="profilePicture">Profile Picture (Optional)</label>
-                        <input type="file" id="profilePicture" name="profilePicture" onChange={handleFileChange} accept="image/*" />
-                    </div>
-
-                    <div className="form-group">
-                        <input type="text" name="address" placeholder="Address" value={formData.address} onChange={handleChange} required />
-                    </div>
-
-                    {/* 🔑 REMOVED: Role selection dropdown */}
-
-                    {/* 🔑 The 'user' specific fields are now always required for this registration form */}
-                    <div className="form-group">
-                        <input type="text" name="houseNumber" placeholder="House Number" value={formData.houseNumber} onChange={handleChange} required />
-                    </div>
-
-                    <div className="form-group">
-                        <input type="text" name="ward" placeholder="Ward" value={formData.ward} onChange={handleChange} required />
-                    </div>
-
-                    {errorMsg && <p className="error">{errorMsg}</p>}
-
-                    <button type="submit" className="btn-register">Register</button>
+                    <button type="submit" className="btn-register" disabled={isLoading}>
+                        {isLoading ? 'Creating Account...' : 'Sign Up'}
+                        {!isLoading && <ArrowRight size={20} />}
+                    </button>
 
                     <p className="login-link">
                         Already have an account? <Link to="/login">Login here</Link>

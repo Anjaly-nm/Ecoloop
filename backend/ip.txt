@@ -1,0 +1,58 @@
+
+Windows IP Configuration
+
+   Host Name . . . . . . . . . . . . : LAPTOP-EAB75C1K
+   Primary Dns Suffix  . . . . . . . : 
+   Node Type . . . . . . . . . . . . : Hybrid
+   IP Routing Enabled. . . . . . . . : No
+   WINS Proxy Enabled. . . . . . . . : No
+
+Unknown adapter Local Area Connection:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . : 
+   Description . . . . . . . . . . . : ExpressVPN TUN Driver
+   Physical Address. . . . . . . . . : 
+   DHCP Enabled. . . . . . . . . . . : No
+   Autoconfiguration Enabled . . . . : Yes
+
+Wireless LAN adapter Local Area Connection* 1:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . : 
+   Description . . . . . . . . . . . : Microsoft Wi-Fi Direct Virtual Adapter
+   Physical Address. . . . . . . . . : CE-47-40-A6-35-23
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+
+Wireless LAN adapter Local Area Connection* 2:
+
+   Media State . . . . . . . . . . . : Media disconnected
+   Connection-specific DNS Suffix  . : 
+   Description . . . . . . . . . . . : Microsoft Wi-Fi Direct Virtual Adapter #2
+   Physical Address. . . . . . . . . : EE-47-40-A6-35-23
+   DHCP Enabled. . . . . . . . . . . : No
+   Autoconfiguration Enabled . . . . : Yes
+
+Wireless LAN adapter Wi-Fi:
+
+   Connection-specific DNS Suffix  . : 
+   Description . . . . . . . . . . . : Realtek RTL8822CE 802.11ac PCIe Adapter
+   Physical Address. . . . . . . . . : CC-47-40-A6-35-23
+   DHCP Enabled. . . . . . . . . . . : Yes
+   Autoconfiguration Enabled . . . . : Yes
+   IPv6 Address. . . . . . . . . . . : 2402:8100:3921:79cc:85e0:4c13:5679:666b(Preferred) 
+   Temporary IPv6 Address. . . . . . : 2402:8100:3921:79cc:20ff:a757:666b:60fc(Preferred) 
+   Link-local IPv6 Address . . . . . : fe80::a6fd:abb4:7869:d7eb%9(Preferred) 
+   IPv4 Address. . . . . . . . . . . : 10.219.35.81(Preferred) 
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Lease Obtained. . . . . . . . . . : 16 March 2026 13:12:44
+   Lease Expires . . . . . . . . . . : 16 March 2026 15:43:11
+   Default Gateway . . . . . . . . . : fe80::387a:7eff:fecb:9a3%9
+                                       10.219.35.135
+   DHCP Server . . . . . . . . . . . : 10.219.35.135
+   DHCPv6 IAID . . . . . . . . . . . : 114050880
+   DHCPv6 Client DUID. . . . . . . . : 00-01-00-01-2F-07-AE-EF-CC-47-40-A6-35-23
+   DNS Servers . . . . . . . . . . . : 10.219.35.135
+                                       2402:8100:3921:79cc::b0
+   NetBIOS over Tcpip. . . . . . . . : Enabled

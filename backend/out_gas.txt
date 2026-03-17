@@ -1,0 +1,2 @@
+StatusCode: 201
+{"success":true,"message":"Gas data recorded successfully","status":"High","data":{"binId":"BIN_TEST_99","gasLevel":950,"status":"High","timestamp":"2026-03-16T09:14:59.795Z","_id":"69b7ca13635ddcd6472d5ea4","__v":0}}

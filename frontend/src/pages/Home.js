@@ -175,12 +175,13 @@ const Home = () => {
             className="relative"
           >
             <div className="relative z-10 rounded-[3rem] overflow-hidden shadow-2xl shadow-emerald-200 border-8 border-white bg-white lg:h-[520px] flex items-center justify-center">
+
               <img
                 src="/images/athe.png"
-                alt="Modern Recycling Bins"
+                alt="EcoLoop Hero Character"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/20 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/20 to-transparent pointer-events-none z-10" />
             </div>
             {/* Floating Card */}
             <motion.div

@@ -1,0 +1,23 @@
+Submission Stats by Ward:
+{
+  "2": {
+    "total": 20,
+    "assigned": 18,
+    "unassigned": 2
+  },
+  "3": {
+    "total": 11,
+    "assigned": 8,
+    "unassigned": 3
+  },
+  "5": {
+    "total": 2,
+    "assigned": 2,
+    "unassigned": 0
+  },
+  "9": {
+    "total": 15,
+    "assigned": 9,
+    "unassigned": 6
+  }
+}

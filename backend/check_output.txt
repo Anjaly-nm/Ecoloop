@@ -1,0 +1,16 @@
+--- Current Ward Assignments ---
+Ward: 2, Collector: jan (ID: 68d5147d26f80d678efb6831)
+Ward: 9, Collector: jismi (ID: 68cbdb7dc8d2a4a8153a95b2)
+Ward: 3, Collector: jeeva (ID: 693fe37a86a8721540bb968e)
+
+--- All Collectors ---
+Name: jismi, ID: 68cbdb7dc8d2a4a8153a95b2
+Name: anala, ID: 68cd631926945c77c8f1a24f
+Name: jan, ID: 68d5147d26f80d678efb6831
+Name: nikhitha, ID: 68f729527285f1885aee6cd3
+Name: Akshaya sabu, ID: 68fb46a8895ba2c1a2de9938
+Name: vijetha jinu, ID: 690090a7c065f357f170b070
+Name: jeeva, ID: 693fe37a86a8721540bb968e
+Name: Akshya, ID: 693fe3ea86a8721540bb96b7
+Name: devu, ID: 694129bc6ec446a6b373c0b7
+Name: A.s Kailas, ID: 69525622d6aca1954ac6bee0

@@ -1,0 +1,13 @@
+Connected to DB
+--- Last Submission Details ---
+ID: new ObjectId("69ae6e3ddb0d6dd1612a276a")
+Status: pending
+Pending Reason: Collector is currently busy in another ward (2).
+User Ward: 9
+Collector ID: null
+Is Immediate: false
+--- Collector Assignment for Ward: 9 ---
+Found Assignment for collectorId: new ObjectId("68fb46a8895ba2c1a2de9938")
+Active Tasks Count for this Collector: 2
+- Task ID: 693938f56938fb1fbd28823b, status: approved, Ward: 2
+- Task ID: 69427d874cafe6c57dbc6a2e, status: approved, Ward: 2

@@ -45,3 +45,10 @@ backend/logs/
 # Secrets - never commit these
 backend/serviceAccountKey.json
 backend/utils/config/config.gmail.env
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

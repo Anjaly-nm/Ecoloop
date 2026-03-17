@@ -1,0 +1,13 @@
+Found 10 pickups for jismi
+- ID: 68e284fc7e2bf6d0a754dfbc, Status: collected, Date: Sun Oct 05 2025 20:17:24 GMT+0530 (India Standard Time)
+- ID: 68e28646aee017e0d9d5346c, Status: collected, Date: Sun Oct 05 2025 20:22:53 GMT+0530 (India Standard Time)
+- ID: 68e6afdedbb99a9b07ca43b3, Status: collected, Date: Thu Oct 09 2025 00:09:26 GMT+0530 (India Standard Time)
+- ID: 68e6b77a6dadfce46890f021, Status: collected, Date: Thu Oct 09 2025 00:41:54 GMT+0530 (India Standard Time)
+- ID: 692e8399aa70a638152ebb12, Status: collected, Date: Tue Dec 02 2025 11:43:45 GMT+0530 (India Standard Time)
+- ID: 6931c63cd6b23fa630dce672, Status: collected, Date: Thu Dec 04 2025 23:04:51 GMT+0530 (India Standard Time)
+- ID: 6931d396105c6f421ea5d859, Status: collected, Date: Fri Dec 05 2025 00:01:50 GMT+0530 (India Standard Time)
+- ID: 6933223b00692d94d2165d56, Status: collected, Date: Fri Dec 05 2025 23:49:38 GMT+0530 (India Standard Time)
+- ID: 693465519ab070d52523488f, Status: collected, Date: Sat Dec 06 2025 22:48:09 GMT+0530 (India Standard Time)
+- ID: 69ae72e95be4fa219c005eac, Status: approved, Date: Mon Mar 09 2026 12:42:41 GMT+0530 (India Standard Time)
+
+Unassigned tasks: 0

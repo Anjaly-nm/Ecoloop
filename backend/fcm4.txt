@@ -1,0 +1,3 @@
+Connected to DB
+Admins found: 1
+Admin admind (admind@gmail.com): fcmToken='mock-token-from-node'

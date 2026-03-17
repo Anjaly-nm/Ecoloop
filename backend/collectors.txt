@@ -1,0 +1,13 @@
+(node:21140) [MONGOOSE] DeprecationWarning: Mongoose: the `strictQuery` option will be switched back to `false` by default in Mongoose 7. Use `mongoose.set('strictQuery', false);` if you want to prepare for this change. Or use `mongoose.set('strictQuery', true);` to suppress this warning.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Found 10 collectors:
+- ID: 68cbdb7dc8d2a4a8153a95b2, Name: jismi, Role: collector
+- ID: 68cd631926945c77c8f1a24f, Name: anala, Role: collector
+- ID: 68d5147d26f80d678efb6831, Name: jan, Role: collector
+- ID: 68f729527285f1885aee6cd3, Name: nikhitha, Role: collector
+- ID: 68fb46a8895ba2c1a2de9938, Name: Akshaya sabu, Role: collector
+- ID: 690090a7c065f357f170b070, Name: vijetha jinu, Role: collector
+- ID: 693fe37a86a8721540bb968e, Name: jeeva, Role: collector
+- ID: 693fe3ea86a8721540bb96b7, Name: Akshya, Role: collector
+- ID: 694129bc6ec446a6b373c0b7, Name: devu, Role: collector
+- ID: 69525622d6aca1954ac6bee0, Name: A.s Kailas, Role: collector

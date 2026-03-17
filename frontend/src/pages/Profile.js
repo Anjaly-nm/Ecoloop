@@ -192,7 +192,20 @@ const Profile = () => {
       <header className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-50 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              const role = profile?.role?.toLowerCase();
+              if (role === 'admin') {
+                navigate('/Adminpage');
+              } else if (role === 'collector') {
+                navigate('/collector');
+              } else if (role === 'seller') {
+                navigate('/seller-dashboard');
+              } else if (role === 'delivery-boy') {
+                navigate('/delivery-dashboard');
+              } else {
+                navigate('/Dashboard');
+              }
+            }}
             className="flex items-center gap-2 group text-emerald-950"
           >
             <div className="p-2 bg-emerald-50 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-all">

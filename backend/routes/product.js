@@ -6,6 +6,7 @@ const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const Product = require("../models/admin/product");
 const User = require("../models/user/users");
+const Order = require("../models/user/order"); // Added Order model
 const { isSeller, authenticateToken } = require("../middlewares/middleware");
 
 const JWT_SECRET = process.env.JWT_SECRET || "secretKey";
@@ -249,7 +250,21 @@ router.delete("/:id", isSeller, async (req, res) => {
 router.post("/:id/reviews", authenticateToken, async (req, res) => {
   try {
     const { rating, comment } = req.body;
-    const product = await Product.findById(req.params.id);
+    const productId = req.params.id;
+    const userId = req.user._id;
+
+    // Verify if the user has purchased the product
+    const hasBought = await Order.findOne({
+      userId: userId,
+      "items.productId": productId,
+      status: { $ne: "cancelled" } // Can review if order is not cancelled
+    });
+
+    if (!hasBought) {
+      return res.status(403).json({ success: false, message: "You can only review products you have purchased." });
+    }
+
+    const product = await Product.findById(productId);
 
     if (!product) {
       return res.status(404).json({ success: false, message: "Product not found" });

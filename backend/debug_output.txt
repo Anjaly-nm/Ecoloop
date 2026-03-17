@@ -1,0 +1,26 @@
+Connected to DB
+Found Collector: Akshaya sabu (ID: 68fb46a8895ba2c1a2de9938)
+Assigned Wards: 9
+Directly assigned pickups (collector_id matches): 12
+Sample direct pickup states: [
+  {
+    "id": "68fe776eee09bfde6d80036e",
+    "status": "collected",
+    "date": "2025-10-26T19:33:02.275Z"
+  },
+  {
+    "id": "69312f004dfc9a4738574843",
+    "status": "collected",
+    "date": "2025-12-04T06:49:36.957Z"
+  },
+  {
+    "id": "69326167b349998d2cfe5037",
+    "status": "collected",
+    "date": "2025-12-05T04:36:55.014Z"
+  }
+]
+Submissions in her wards (any status except collected): 5
+Unassigned submissions in her wards: 0
+Submissions in her wards assigned to SOMEONE ELSE: 2
+Other Collectors responsible: 68f729527285f1885aee6cd3, 68d5147d26f80d678efb6831
+Other Collector names: jan, nikhitha

@@ -11,8 +11,8 @@ const User = require("../models/user/users");
 // In serverless environments like Vercel, use /tmp (writable) instead of the read-only code directory
 const isServerless = !!process.env.VERCEL;
 const uploadDir = isServerless
-  ? "/tmp/uploads"
-  : path.join(__dirname, "..", "..", "uploads");
+  ? "/tmp/uploads/profiles"
+  : path.join(__dirname, "..", "uploads", "profiles");
 
 if (!fs.existsSync(uploadDir)) {
   try {
@@ -73,9 +73,10 @@ router.put("/profile/:id", upload.single("profilePicture"), async (req, res) => 
 
         // 2. Set new path if a file was uploaded
         if (req.file) {
-            // Your path is correct: `uploads/filename.ext`
             newProfilePicturePath = path.join(uploadDir, req.file.filename);
-            updates.profilePicture = newProfilePicturePath;
+            
+            // ✅ Fix: Save relative path structure that aligns with index.js static folder
+            updates.profilePicture = `uploads/profiles/${req.file.filename}`;
         }
 
         // 3. Update user in the database
@@ -92,12 +93,18 @@ router.put("/profile/:id", upload.single("profilePicture"), async (req, res) => 
         }
 
         // 4. Successful update: Delete the OLD file
-        if (oldProfilePicturePath && fs.existsSync(oldProfilePicturePath)) {
-            // Note: Use fs.unlink (async) or fs.unlinkSync (sync)
-            fs.unlink(oldProfilePicturePath, (err) => {
-                if (err) console.error("Error deleting old file:", err);
-                else console.log(`🗑️ Old file deleted: ${oldProfilePicturePath}`);
-            });
+        if (oldProfilePicturePath) {
+            // Need absolute path to old file for fs.unlink
+            const absoluteOldPath = path.isAbsolute(oldProfilePicturePath) 
+                 ? oldProfilePicturePath 
+                 : path.join(__dirname, "..", oldProfilePicturePath);
+
+            if (fs.existsSync(absoluteOldPath)) {
+                fs.unlink(absoluteOldPath, (err) => {
+                    if (err) console.error("Error deleting old file:", err);
+                    else console.log(`🗑️ Old file deleted: ${absoluteOldPath}`);
+                });
+            }
         }
 
         res.status(200).json({ message: "✅ Profile updated successfully", user: updatedUser });

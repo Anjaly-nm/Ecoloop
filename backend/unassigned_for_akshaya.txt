@@ -1,0 +1,34 @@
+[
+  {
+    "_id": "693951ebf9e95a5468ca6162",
+    "user_id": {
+      "baseSalary": 20000,
+      "perDeliveryIncentive": 50,
+      "_id": "68f87425cb35e9c05b50eb7a",
+      "name": "berly",
+      "email": "berly@gmail.com",
+      "password": "$2a$10$R36oLV9FhZVI52D903EzR.j2KIpJ7RqLds9ZLm1/RPoakjQGofeXq",
+      "phone": "7510215955",
+      "address": "tfctddrtr",
+      "role": "user",
+      "houseNumber": "3",
+      "wardNumber": "9",
+      "profilePicture": null,
+      "ecoPoints": 0,
+      "createdAt": "2025-10-22T06:05:25.554Z",
+      "updatedAt": "2025-10-22T06:05:25.554Z",
+      "__v": 0
+    },
+    "category": "Plastic",
+    "category_id": "68d502b587187a8dbc4f2d63",
+    "collector_id": "68f729527285f1885aee6cd3",
+    "scheduled_date": "2025-12-10T10:56:43.214Z",
+    "is_immediate": false,
+    "weight": null,
+    "status": "approved",
+    "pendingReason": "",
+    "createdAt": "2025-12-10T10:56:43.444Z",
+    "updatedAt": "2025-12-10T10:56:43.444Z",
+    "__v": 0
+  }
+]

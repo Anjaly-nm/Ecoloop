@@ -1,40 +1,93 @@
-/*
- * RESPONSIVENESS FIXES:
- * 1. flex-wrap: wrap is added to allow stacking on smaller screens.
- * 2. overflow: hidden is removed to allow vertical scrolling when content overflows the viewport.
- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /* Full Page Layout */
 .register-page {
   display: flex;
-  min-height: 100vh; /* Use min-height so content can push the container taller */
+  min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #a8e063, #56ab2f);
-  flex-wrap: wrap; /* CRITICAL: Allows the image and form to stack on smaller screens */
-  /* REMOVED: overflow: hidden; -> allows vertical scrolling when needed */
+  background-color: #f8fafc;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  flex-wrap: wrap;
 }
 
-/* Left side image */
+/* Left side immersive section */
 .register-image {
-  flex: 1;
+  flex: 1.2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 4rem;
+  overflow: hidden;
+  background-color: #f0fff4;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  min-width: 300px;
+}
+
+.register-image::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  /* Premium deep green overlay */
+  background: linear-gradient(135deg, rgba(20, 83, 45, 0.85) 0%, rgba(34, 197, 94, 0.75) 100%);
+  z-index: 1;
+}
+
+.register-image-content {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  animation: fadeInLeft 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.register-image-content h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -1.5px;
+}
+
+.register-image-content p {
+  font-size: 1.25rem;
+  opacity: 0.95;
+  max-width: 450px;
+  line-height: 1.6;
+}
+
+.features-list {
+  margin-top: 3rem;
+  list-style: none;
+  padding: 0;
+}
+
+.features-list li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  opacity: 0;
+  animation: slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.features-list li:nth-child(1) { animation-delay: 0.2s; }
+.features-list li:nth-child(2) { animation-delay: 0.4s; }
+.features-list li:nth-child(3) { animation-delay: 0.6s; }
+
+.circle-check {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0fff4;
-  animation: fadeInLeft 1.2s ease-in-out;
-  min-width: 300px; /* Prevents the image from shrinking too much on smaller desktop views */
-}
-
-.register-image img {
-  width: 90%;
-  height: auto;
-  border-radius: 15px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-  transition: transform 0.6s ease;
-}
-
-.register-image img:hover {
-  transform: scale(1.05);
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  backdrop-filter: blur(4px);
 }
 
 /* Right side form container */
@@ -44,182 +97,264 @@
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  animation: fadeInRight 1.2s ease-in-out;
-  min-width: 320px; /* Ensures the form panel has enough space on smaller screens before stacking */
-  padding: 20px 0; /* Add vertical padding for when it stacks */
+  padding: 2rem;
+  min-width: 320px;
+  position: relative;
 }
 
 .register-form {
-  width: 95%; /* Increased from 80% to use more space on small screens */
-  max-width: 450px; /* Slightly increased max-width for better appearance */
-  padding: 30px;
+  width: 100%;
+  max-width: 500px;
+  padding: 2.5rem;
   background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-  animation: zoomIn 0.8s ease-in-out;
+  border-radius: 24px;
+  /* Sleek shadow */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  animation: zoomIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* Headings */
 .register-form h2 {
-  text-align: center;
-  color: #2f855a;
-  font-size: 28px;
-  margin-bottom: 10px;
-  animation: slideDown 0.8s ease-in-out;
+  text-align: left;
+  color: #0f172a;
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
 }
 
 .register-form span {
-  color: #38a169;
+  color: #22c55e;
+  position: relative;
 }
 
 .form-subtitle {
-  text-align: center;
-  color: #666;
-  margin-bottom: 20px;
-  font-size: 14px;
-  animation: fadeIn 1s ease-in-out;
+  text-align: left;
+  color: #64748b;
+  margin-bottom: 2.5rem;
+  font-size: 1.05rem;
 }
 
 /* Input Fields */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  row-gap: 0; /* Let margin-bottom handle row gap */
+}
+
 .form-group {
-  margin-bottom: 15px;
-  animation: slideUp 0.6s ease-in-out;
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: all 0.3s ease;
+  pointer-events: none;
 }
 
 input, select {
   width: 100%;
-  padding: 12px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 14px;
+  padding: 1rem 1rem 1rem 3.25rem;
+  background-color: #f8fafc;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #334155;
   outline: none;
-  transition: all 0.3s ease;
-  box-sizing: border-box; /* Ensure padding doesn't push the elements beyond 100% width */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
 }
 
 input:focus, select:focus {
-  border-color: #38a169;
-  box-shadow: 0 0 8px rgba(56, 161, 105, 0.3);
+  background-color: #ffffff;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+}
+
+input:focus ~ .input-icon {
+  color: #22c55e;
+}
+
+/* File Upload Specific Styling */
+.file-upload-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background-color: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.file-upload-wrapper:hover {
+  border-color: #22c55e;
+  background-color: #f0fdf4;
+}
+
+.file-upload-wrapper label {
+  cursor: pointer;
+  font-weight: 500;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-upload-wrapper input[type="file"] {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-upload-wrapper:hover label, .file-upload-wrapper:hover .file-icon {
+  color: #16a34a;
 }
 
 /* Button */
 .btn-register {
   width: 100%;
-  padding: 12px;
-  background: #38a169;
+  padding: 1.1rem;
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   border: none;
-  border-radius: 10px;
+  border-radius: 14px;
   color: #fff;
-  font-size: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  animation: bounceIn 1s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.4);
 }
 
 .btn-register:hover {
-  background: #2f855a;
-  transform: scale(1.05);
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px -5px rgba(34, 197, 94, 0.5);
+}
+
+.btn-register:active {
+  transform: translateY(0);
 }
 
 /* Login link */
 .login-link {
-  margin-top: 15px;
+  margin-top: 2rem;
   text-align: center;
-  font-size: 14px;
-  color: #4a5568;
-  animation: fadeIn 1.2s ease-in-out;
+  font-size: 0.95rem;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .login-link a {
-  color: #2f855a;
-  font-weight: bold;
+  color: #16a34a;
+  font-weight: 700;
   text-decoration: none;
+  transition: all 0.2s ease;
+  margin-left: 0.25rem;
 }
 
 .login-link a:hover {
   text-decoration: underline;
+  color: #15803d;
 }
 
-/* Optional: Collector ID specific animation */
-input[name="collectorId"] {
-  animation: fadeIn 0.8s ease-in-out;
+.error-message {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  text-align: left;
+  background: #fef2f2;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-weight: 500;
+  border-left: 4px solid #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/*
- * MEDIA QUERY FOR MOBILE DEVICES (max-width: 768px)
- * 1. Stacks the image and form vertically (column).
- * 2. Removes the vertical centering on the form container so content flows naturally and allows scrolling.
- * 3. Hides the image for a cleaner mobile experience (optional, but common).
- */
-@media (max-width: 768px) {
-  .register-page {
-    /* Set min-height to initial to avoid forcing full viewport height when stacked */
-    min-height: initial;
-    /* Ensure the background gradient still covers the whole scrolled page */
-    padding-bottom: 50px;
-  }
-
-  .register-image {
-    display: none; /* Hide the large image on mobile for better focus on the form */
-    /* If you want to keep the image, change the styles to:
-    flex: 1 1 100%;
-    order: 1;
-    max-height: 200px;
-    */
-  }
-
-  .register-form-container {
-    flex: 1 1 100%; /* Form now takes 100% of the width */
-    order: 2; /* Ensures the form comes after the image (if image is visible) */
-
-    /* Remove vertical centering to allow natural scrolling */
-    align-items: flex-start;
-    justify-content: center;
-    min-height: auto;
-  }
-
-  .register-form {
-    max-width: 100%;
-    border-radius: 0;
-    box-shadow: none; /* Remove shadows on mobile for a lighter look */
-    padding: 20px;
-    margin-top: 0;
-  }
-}
-
-/* Animations (No changes here, keeping original animations) */
+/* Animations */
 @keyframes fadeInLeft {
-  from { opacity: 0; transform: translateX(-50px); }
+  from { opacity: 0; transform: translateX(-40px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes fadeInRight {
-  from { opacity: 0; transform: translateX(50px); }
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes zoomIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes slideDown {
-  from { transform: translateY(-30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .register-image {
+    padding: 3rem;
+  }
+  .register-image-content h1 {
+    font-size: 2.5rem;
+  }
 }
 
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+@media (max-width: 900px) {
+  .register-image {
+    display: none;
+  }
+  .register-page {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  }
+  .register-form-container {
+    padding: 1.5rem;
+    background: transparent;
+  }
+  .register-form {
+    padding: 2rem;
+  }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes bounceIn {
-  0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); }
+@media (max-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .form-group.full-width {
+    grid-column: span 1;
+  }
+  .register-form {
+    padding: 1.5rem;
+    border-radius: 20px;
+  }
+  .register-form h2 {
+    font-size: 1.75rem;
+  }
 }
