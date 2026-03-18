@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   ShoppingBag, Recycle, User, LogOut, Menu, X, BookOpen, Leaf,
-  TrendingUp, Calendar, Bell, Settings, HelpCircle, ChevronRight,
+  TrendingUp, Calendar, Bell, Settings, HelpCircle, ChevronRight, Sparkles,
   Star, Award, Activity, Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -76,13 +76,13 @@ const Dashboard = () => {
       shadow: "shadow-teal-200"
     },
     {
-      name: "Eco Events",
-      path: "/events",
-      icon: Calendar,
-      description: "Join community workshops and green initiatives.",
-      stats: "Upcoming",
-      gradient: "from-sky-600 to-blue-600",
-      shadow: "shadow-sky-200"
+      name: "Event Cleaning",
+      path: "/cleaning-service",
+      icon: Sparkles,
+      description: "Directly book hassle-free cleaning for your weddings or home parties.",
+      stats: "New Service",
+      gradient: "from-indigo-600 to-purple-600",
+      shadow: "shadow-indigo-200"
     },
     {
       name: "Learning Center",
@@ -92,6 +92,15 @@ const Dashboard = () => {
       stats: "8+ Courses",
       gradient: "from-amber-600 to-orange-600",
       shadow: "shadow-amber-200"
+    },
+    {
+      name: "Eco Events",
+      path: "/events",
+      icon: Calendar,
+      description: "Join community workshops and green initiatives.",
+      stats: "Upcoming",
+      gradient: "from-sky-600 to-blue-600",
+      shadow: "shadow-sky-200"
     }
   ];
 

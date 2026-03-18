@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Package,
   Activity,
-  Cpu
+  Cpu,
+  Sparkles
 } from "lucide-react";
 
 const AdminPage = () => {
@@ -68,6 +69,7 @@ const AdminPage = () => {
     { icon: LineChart, label: "System Reports", path: "/admin/SystemReports" },
     { icon: Activity, label: "Assign Delivery", path: "/admin/assign-delivery-boy" },
     { icon: Cpu, label: "Smart Bin Monitor", path: "/admin/smart-bin-monitor" },
+    { icon: Sparkles, label: "Cleaning Requests", path: "/admin/cleaning-requests" },
   ];
 
   const quickAccess = [
@@ -80,6 +82,7 @@ const AdminPage = () => {
     { icon: Cpu, title: "Bin Monitor", path: "/admin/smart-bin-monitor", color: "rose", desc: "IoT Gas Sensor" },
     { icon: Package, title: "Eco Products", path: "/products", color: "orange", desc: "Verify listings" },
     { icon: Zap, title: "Efficiency", path: "/adminpage", color: "indigo", desc: "Optimize routes" },
+    { icon: Sparkles, title: "Cleaning Jobs", path: "/admin/cleaning-requests", color: "teal", desc: "Assign workers" },
   ];
 
   const stats = [

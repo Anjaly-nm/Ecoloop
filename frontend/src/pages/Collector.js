@@ -30,7 +30,8 @@ import {
   FaTools,
   FaPlug,
   FaBalanceScale,
-  FaBox
+  FaBox,
+  FaStar
 } from "react-icons/fa";
 import {
   ResponsiveContainer,
@@ -73,6 +74,7 @@ const CollectorDashboardModern = () => {
   const [analytics, setAnalytics] = useState(null);
   const [earnings, setEarnings] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [cleaningEvents, setCleaningEvents] = useState([]);
   const [showMap, setShowMap] = useState(false);
   const [selectedPickupForMap, setSelectedPickupForMap] = useState(null);
   const [gasWarning, setGasWarning] = useState(null);
@@ -136,11 +138,12 @@ const CollectorDashboardModern = () => {
       const headers = { token };
 
       // Use Promise.allSettled to ensure failure of one doesn't block others
-      const [pickupsRes, analyticsRes, earningsRes, notifRes] = await Promise.allSettled([
+      const [pickupsRes, analyticsRes, earningsRes, notifRes, cleaningRes] = await Promise.allSettled([
         axios.get(`${PICKUPS_API}?filter=${scheduleFilter}`, { headers }),
         axios.get(`${DASHBOARD_API}/analytics`, { headers }),
         axios.get(`${DASHBOARD_API}/earnings`, { headers }),
-        axios.get(`${DASHBOARD_API}/notifications`, { headers })
+        axios.get(`${DASHBOARD_API}/notifications`, { headers }),
+        axios.get(`${API_BASE}/cleaning-requests/collector`, { headers }) // We'll need to create this endpoint
       ]);
 
       if (pickupsRes.status === "fulfilled") {
@@ -165,6 +168,12 @@ const CollectorDashboardModern = () => {
         setNotifications(notifRes.value.data.notifications || []);
       } else {
         console.warn("⚠️ Notifications Fetch Failed (Soft Failure):", notifRes.reason);
+      }
+
+      if (cleaningRes.status === "fulfilled") {
+        setCleaningEvents(cleaningRes.value.data.data || []);
+      } else {
+        console.warn("⚠️ Cleaning Events Fetch Failed:", cleaningRes.reason);
       }
 
       // Fetch Gas Data for Safety
@@ -315,6 +324,17 @@ const CollectorDashboardModern = () => {
                         }`}
                     >
                       <FaClock className={activeTab === "pending_tasks" ? "text-amber-500" : ""} /> Pending/Hold
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => setActiveTab("cleaning_events")}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === "cleaning_events"
+                        ? "bg-emerald-50 text-emerald-700 shadow-sm"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                    >
+                      <FaStar className={activeTab === "cleaning_events" ? "text-purple-500" : ""} /> Event Cleaning
                     </button>
                   </li>
                   <li>
@@ -577,6 +597,80 @@ const CollectorDashboardModern = () => {
                   </table>
                 </div>
               </>
+            )}
+
+            {/* EVENT CLEANING TAB */}
+            {activeTab === "cleaning_events" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center px-2">
+                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-3">
+                    <span className="w-1 h-5 bg-purple-500 rounded-full"></span>
+                    My Assigned Cleaning Events
+                  </h2>
+                </div>
+                {cleaningEvents.length === 0 ? (
+                  <div className="bg-white p-20 rounded-[2rem] border border-dashed border-slate-200 text-center">
+                    <FaStar className="mx-auto text-slate-200 text-4xl mb-4" />
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No Events Assigned to Your Team</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {cleaningEvents.map((req) => (
+                      <div key={req._id} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all flex flex-col">
+                        <div className="flex justify-between items-start mb-4">
+                          <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-purple-100">
+                            {req.eventType}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border hover:scale-105 transition-transform cursor-default ${req.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+                            {req.status}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3 mb-6 flex-grow">
+                          <div className="flex items-center text-sm font-bold text-slate-700">
+                            <FaUserCircle size={16} className="text-slate-400 mr-3" />
+                            {req.user_id ? req.user_id.name : "Unknown User"}
+                          </div>
+                          <div className="flex items-center text-sm font-medium text-slate-500">
+                            <FaCalendarAlt size={16} className="text-slate-400 mr-3" />
+                            {new Date(req.scheduled_date).toLocaleDateString()}
+                          </div>
+                          <div className="flex items-center text-sm font-medium text-slate-500">
+                            <FaClock size={16} className="text-slate-400 mr-3" />
+                            {req.time}
+                          </div>
+                          <div className="flex items-start text-sm font-medium text-slate-500">
+                            <FaMapMarkerAlt size={16} className="text-slate-400 mr-3 mt-0.5" />
+                            <span className="line-clamp-2">{req.location}</span>
+                          </div>
+                        </div>
+
+                        {req.status !== 'completed' && (
+                          <div className="pt-6 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const token = localStorage.getItem("token");
+                                  await axios.put(`${API_BASE}/cleaning-requests/${req._id}/complete`, {}, { headers: { token } });
+                                  toast.success("Event marked as completed");
+                                  fetchData(true);
+                                } catch (error) {
+                                  toast.error("Failed to update status");
+                                  console.error(error);
+                                }
+                              }}
+                              className="w-full py-3 bg-purple-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-purple-500 transition-all active:scale-95 shadow-md shadow-purple-500/20"
+                            >
+                              Mark as Completed
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* SCHEDULE TAB */}

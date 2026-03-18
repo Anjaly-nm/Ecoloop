@@ -26,6 +26,8 @@ import DeliveryDashboard from "./pages/DeliveryDashboard"; // ✅ Added new impo
 import LeaveApplication from "./pages/LeaveApplication"; // ✅ Added new import
 import AdminLeaveApplications from "./pages/AdminLeaveApplications"; // ✅ Added new import
 import ProductDetails from "./pages/ProductDetails"; // ✅ Added new import
+import CleaningServiceRequest from "./pages/CleaningServiceRequest"; // ✅ Added new import
+import AdminCleaningRequests from "./pages/AdminCleaningRequests"; // ✅ Added new import
 
 // ✅ Admin Pages
 import Adminpage from "./pages/Adminpage";
@@ -80,6 +82,7 @@ function App() {
           <Route path="/events" element={<Events />} /> {/* ✅ Added new route for Events */}
           <Route path="/seller-dashboard" element={<SellerDashboard />} /> {/* ✅ Added new route */}
           <Route path="/delivery-dashboard" element={<DeliveryDashboard />} /> {/* ✅ Added new route for Delivery Dashboard */}
+          <Route path="/cleaning-service" element={<CleaningServiceRequest />} /> {/* ✅ Added new route for Cleaning Service */}
           <Route path="/leave-application" element={<LeaveApplication />} /> {/* ✅ Added new route for Leave Application */}
           <Route path="/admin/leave-applications" element={<AdminLeaveApplications />} /> {/* ✅ Added new route for Admin Leave Applications */}
 
@@ -98,6 +101,7 @@ function App() {
           <Route path="/admin/applications" element={<Applications />} /> {/* ✅ Added new route */}
           <Route path="/admin/assign-delivery-boy" element={<AssignDeliveryBoy />} /> {/* ✅ Added new route for Assign Delivery Boy */}
           <Route path="/admin/smart-bin-monitor" element={<SmartBinMonitor />} /> {/* ✅ Added Smart Bin Monitor route */}
+          <Route path="/admin/cleaning-requests" element={<AdminCleaningRequests />} /> {/* ✅ Added Admin Cleaning Requests route */}
 
           {/* Collector Route */}
           <Route path="/collector" element={<Collector />} />

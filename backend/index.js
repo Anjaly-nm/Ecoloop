@@ -178,6 +178,7 @@ app.use('/api/messages', require('./routes/messages')); // ✅ Added messages ro
 app.use('/api/salary', require('./routes/salary')); // ✅ Added salary route
 app.use('/api/collector-dashboard', require('./routes/collectorDashboard')); // ✅ Added collector dashboard route
 app.use('/api/iot', require('./routes/iotRoutes')); // ✅ Added IoT routes
+app.use('/api/cleaning-requests', require('./routes/cleaningRequests')); // ✅ Added cleaning requests
 
 // Handle 404 (unchanged)
 app.use((req, res) => {
