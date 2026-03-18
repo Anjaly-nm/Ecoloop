@@ -23,6 +23,27 @@ router.post('/', async (req, res) => {
         });
 
         await newRequest.save();
+
+        // Also notify admins
+        try {
+            const User = require('../models/user/users');
+            const Notification = require('../models/user/notification');
+            const admins = await User.find({ role: 'admin' });
+            for (let admin of admins) {
+                const notif = new Notification({
+                    userId: admin._id,
+                    type: 'new_cleaning_request',
+                    title: 'New Event Cleaning Request',
+                    message: `A new ${eventType || 'Event'} cleaning request has been submitted for ${new Date(scheduled_date).toLocaleDateString()}.`,
+                    actionUrl: '/admin/cleaning-requests',
+                    userModel: 'User'
+                });
+                await notif.save();
+            }
+        } catch (notifErr) {
+            console.error("Error creating admin notification for new cleaning request:", notifErr);
+        }
+
         res.status(201).json({ message: "Cleaning service request submitted successfully!", data: newRequest });
     } catch (error) {
         console.error("Error creating cleaning service request:", error);
