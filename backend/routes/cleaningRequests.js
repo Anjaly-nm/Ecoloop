@@ -7,9 +7,19 @@ const CleaningRequest = require('../models/user/cleaningRequest');
 const { isCollector } = require('../middlewares/middleware');
 
 // Multer Setup
-const uploadDir = path.join(__dirname, '..', 'uploads', 'cleaning');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+let uploadDir = path.join(__dirname, '..', 'uploads', 'cleaning');
+
+// On Vercel, use /tmp for temporary file storage
+if (process.env.VERCEL) {
+    uploadDir = path.join('/tmp', 'uploads', 'cleaning');
+}
+
+try {
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
+} catch (err) {
+    console.warn('⚠️ Warning: Could not create upload directory:', uploadDir, err.message);
 }
 
 const storage = multer.diskStorage({
