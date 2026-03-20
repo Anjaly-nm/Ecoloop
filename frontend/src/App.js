@@ -28,6 +28,7 @@ import AdminLeaveApplications from "./pages/AdminLeaveApplications"; // ✅ Adde
 import ProductDetails from "./pages/ProductDetails"; // ✅ Added new import
 import CleaningServiceRequest from "./pages/CleaningServiceRequest"; // ✅ Added new import
 import AdminCleaningRequests from "./pages/AdminCleaningRequests"; // ✅ Added new import
+import Notifications from "./pages/Notifications"; // ✅ Added new import
 
 // ✅ Admin Pages
 import Adminpage from "./pages/Adminpage";
@@ -85,6 +86,8 @@ function App() {
           <Route path="/cleaning-service" element={<CleaningServiceRequest />} /> {/* ✅ Added new route for Cleaning Service */}
           <Route path="/leave-application" element={<LeaveApplication />} /> {/* ✅ Added new route for Leave Application */}
           <Route path="/admin/leave-applications" element={<AdminLeaveApplications />} /> {/* ✅ Added new route for Admin Leave Applications */}
+          <Route path="/notifications" element={<Notifications />} /> {/* ✅ User notifications */}
+          <Route path="/admin/notifications" element={<Notifications />} /> {/* ✅ Admin notifications */}
 
 
           {/* Admin Routes */}

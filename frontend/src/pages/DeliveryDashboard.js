@@ -428,8 +428,13 @@ const DeliveryDashboard = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
+      case 'ready':
+      case 'confirmed':
         return 'bg-amber-100 text-amber-800 border border-amber-300';
+      case 'assigned':
+        return 'bg-purple-100 text-purple-800 border border-purple-300';
       case 'in-transit':
+      case 'shipped':
         return 'bg-blue-100 text-blue-800 border border-blue-300';
       case 'completed':
       case 'delivered':
@@ -1784,20 +1789,20 @@ const DeliveryDashboard = () => {
                             </button>
                           )}
                           <div className="flex space-x-2">
-                            {delivery.status === 'pending' && (
+                            {['pending', 'assigned', 'ready', 'confirmed'].includes(delivery.status?.toLowerCase()) && (
                               <button
                                 onClick={() => updateDeliveryStatus(delivery.id, 'in-transit')}
                                 className="px-3 py-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors font-medium flex items-center gap-1"
                               >
-                                <FaRoute className="text-white" /> Start
+                                <FaRoute className="text-white" /> Start Delivery
                               </button>
                             )}
-                            {delivery.status === 'in-transit' && (
+                            {['in-transit', 'shipped'].includes(delivery.status?.toLowerCase()) && (
                               <button
                                 onClick={() => updateDeliveryStatus(delivery.id, 'delivered')}
                                 className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600 transition-colors font-medium flex items-center gap-1"
                               >
-                                <FaCheckCircle className="text-white" /> Done
+                                <FaCheckCircle className="text-white" /> Mark Done
                               </button>
                             )}
                           </div>

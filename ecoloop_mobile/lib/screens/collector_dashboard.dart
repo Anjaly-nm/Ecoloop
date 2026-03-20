@@ -183,32 +183,6 @@ class _CollectorDashboardState extends State<CollectorDashboard> {
           ),
           const SizedBox(height: 25),
           
-          // Gas Warning (Mirroring Website logic)
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.only(bottom: 25),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.red.withOpacity(0.2)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Safety Alert', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.red[900], fontSize: 13)),
-                      Text('High gas levels detected in Ward 3. Avoid indoor areas.', style: GoogleFonts.poppins(color: Colors.red[700], fontSize: 11)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
           // Stat Cards
           Row(
             children: [

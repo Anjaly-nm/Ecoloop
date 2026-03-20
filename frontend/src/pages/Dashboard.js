@@ -13,6 +13,7 @@ const Dashboard = () => {
   const [username, setUsername] = useState("Eco-Warrior");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -39,8 +40,27 @@ const Dashboard = () => {
       }
     };
 
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/notifications`,
+          { headers: { token } }
+        );
+        if (response.data.success) {
+          setUnreadCount(response.data.unreadCount || 0);
+        }
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+      }
+    };
+
     fetchUser();
-    return () => window.removeEventListener("scroll", handleScroll);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearInterval(interval);
+    };
   }, [navigate]);
 
   const handleLogout = () => {
@@ -143,9 +163,14 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="hidden sm:flex relative p-2.5 text-emerald-950/40 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all">
+            <button 
+              onClick={() => navigate('/notifications')}
+              className="hidden sm:flex relative p-2.5 text-emerald-950/40 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl transition-all"
+            >
               <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+              {unreadCount > 0 && (
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white animate-pulse" />
+              )}
             </button>
             <button
               onClick={handleLogout}

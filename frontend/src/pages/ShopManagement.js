@@ -1,22 +1,26 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { FaStore, FaUsers, FaBox, FaSync, FaSearch, FaFilter, FaArrowLeft, FaEllipsisV, FaLeaf, FaChartLine } from 'react-icons/fa';
+import { FaStore, FaUsers, FaBox, FaSync, FaSearch, FaFilter, FaArrowLeft, FaEllipsisV, FaLeaf, FaChartLine, FaRecycle, FaTimes } from 'react-icons/fa';
 
 const ShopManagement = () => {
   const [activeTab, setActiveTab] = useState('sellers');
   const [sellers, setSellers] = useState([]);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [recyclingData, setRecyclingData] = useState([]);
   const [productsWithSellers, setProductsWithSellers] = useState({}); // Cache for product-seller mappings
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedSeller, setSelectedSeller] = useState(null);
+  const [showSellerModal, setShowSellerModal] = useState(false);
 
   // Loading states for individual sections
   const [sellersLoading, setSellersLoading] = useState(false);
   const [productsLoading, setProductsLoading] = useState(false);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [recyclingLoading, setRecyclingLoading] = useState(false);
 
   // Refs for debouncing
   const searchTimeoutRef = useRef(null);
@@ -206,6 +210,22 @@ const ShopManagement = () => {
     }
   }, [productsWithSellers]);
 
+  const fetchRecycling = useCallback(async () => {
+    try {
+      setRecyclingLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:4321/api/recycling/all', {
+        headers: { token: token }
+      });
+      setRecyclingData(response.data.data);
+      setError('');
+    } catch (err) {
+      setError('Failed to fetch recycling data: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setRecyclingLoading(false);
+    }
+  }, []);
+
   // Handle tab change - fetch data only when tab is switched
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);
@@ -217,18 +237,22 @@ const ShopManagement = () => {
       fetchProducts();
     } else if (tab === 'orders' && orders.length === 0) {
       fetchOrders();
+    } else if (tab === 'recycling' && recyclingData.length === 0) {
+      fetchRecycling();
     }
-  }, [sellers.length, products.length, orders.length, fetchSellers, fetchProducts, fetchOrders]);
+  }, [sellers.length, products.length, orders.length, recyclingData.length, fetchSellers, fetchProducts, fetchOrders, fetchRecycling]);
 
   const handleRefresh = useCallback(() => {
     if (activeTab === 'sellers') {
       fetchSellers();
     } else if (activeTab === 'products') {
       fetchProducts();
+    } else if (activeTab === 'recycling') {
+      fetchRecycling();
     } else {
       fetchOrders();
     }
-  }, [activeTab, fetchSellers, fetchProducts, fetchOrders]);
+  }, [activeTab, fetchSellers, fetchProducts, fetchOrders, fetchRecycling]);
 
   // Debounced search handler
   const handleSearchChange = useCallback((e) => {
@@ -312,14 +336,14 @@ const ShopManagement = () => {
             </li>
             <li>
               <button
-                onClick={() => handleTabChange('products')}
-                className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${activeTab === 'products'
+                onClick={() => handleTabChange('recycling')}
+                className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${activeTab === 'recycling'
                     ? 'bg-blue-100 text-blue-800 shadow'
                     : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900'
                   }`}
               >
-                <FaBox className="mr-3" />
-                <span>Products</span>
+                <FaSync className="mr-3" />
+                <span>Recycling Logs</span>
               </button>
             </li>
             <li>
@@ -488,6 +512,18 @@ const ShopManagement = () => {
                   </div>
                 </button>
                 <button
+                  onClick={() => handleTabChange('recycling')}
+                  className={`flex-1 md:flex-none py-4 px-5 text-center font-medium text-sm transition-all duration-200 ${activeTab === 'recycling'
+                      ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-white hover:shadow-sm'
+                    }`}
+                >
+                  <div className="flex items-center justify-center">
+                    <FaSync className="mr-2 text-base" />
+                    <span className="font-medium">Recycling</span>
+                  </div>
+                </button>
+                <button
                   onClick={() => handleTabChange('orders')}
                   className={`flex-1 md:flex-none py-4 px-5 text-center font-medium text-sm transition-all duration-200 ${activeTab === 'orders'
                       ? 'text-blue-600 border-b-2 border-blue-500 bg-white'
@@ -548,7 +584,7 @@ const ShopManagement = () => {
           )}
 
           {/* Loading Indicator */}
-          {(sellersLoading || productsLoading || ordersLoading) && (
+          {(sellersLoading || productsLoading || ordersLoading || recyclingLoading) && (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-blue-500"></div>
             </div>
@@ -578,6 +614,9 @@ const ShopManagement = () => {
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                         Joined
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                        Action
                       </th>
                     </tr>
                   </thead>
@@ -641,6 +680,17 @@ const ShopManagement = () => {
                               month: 'short',
                               day: 'numeric'
                             })}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => {
+                                setSelectedSeller(seller);
+                                setShowSellerModal(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-md transition-colors"
+                            >
+                              View Details
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -890,7 +940,178 @@ const ShopManagement = () => {
               </div>
             </div>
           )}
+          {/* Recycling Tab */}
+          {activeTab === 'recycling' && !recyclingLoading && (
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-sm overflow-hidden border border-gray-200">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gradient-to-r from-gray-100 to-gray-50">
+                    <tr>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Seller</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Month</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Waste Collected</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Breakdown</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Developed Products</th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {recyclingData.length > 0 ? (
+                      recyclingData.filter(item => 
+                        !searchTerm || 
+                        item.sellerId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        item.sellerId?.organization?.toLowerCase().includes(searchTerm.toLowerCase())
+                      ).map((item) => (
+                        <tr key={item._id} className="hover:bg-blue-50 transition-colors duration-150">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{item.sellerId?.name || 'Unknown'}</div>
+                            <div className="text-xs text-gray-500">{item.sellerId?.organization || 'N/A'}</div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{item.month}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-700">
+                            {item.totalWasteCollected} Kg
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-600">
+                            <div className="max-w-xs overflow-hidden">
+                              {item.wasteBreakdown?.map((wb, i) => (
+                                <span key={i} className="inline-block bg-gray-100 px-1.5 py-0.5 rounded m-0.5">
+                                  {wb.wasteType}: {wb.quantity}kg
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-blue-700">
+                            <div className="max-w-xs overflow-hidden">
+                              {item.recycledProducts?.map((rp, i) => (
+                                <span key={i} className="inline-block bg-blue-50 px-1.5 py-0.5 rounded m-0.5 border border-blue-100">
+                                  {rp.itemName}: {rp.quantity}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="px-4 py-8 text-center text-gray-500">No recycling logs found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
+          {/* Seller Detail Modal */}
+          {showSellerModal && selectedSeller && (
+            <div className="fixed inset-0 z-[60] overflow-y-auto">
+              <div className="flex items-center justify-center min-h-screen p-4">
+                <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowSellerModal(false)}></div>
+                <div className="bg-white rounded-2xl shadow-2xl z-[70] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                  <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                    <h2 className="text-xl font-bold">Seller Impact Profile: {selectedSeller.name}</h2>
+                    <button onClick={() => setShowSellerModal(false)} className="text-white hover:text-gray-200">
+                      <FaTimes className="text-xl" />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                       <div className="md:col-span-1 flex flex-col items-center">
+                          <img 
+                            src={getImageUrl(selectedSeller.profilePicture) || "https://via.placeholder.com/150"} 
+                            className="w-32 h-32 rounded-full border-4 border-blue-100 shadow-md object-cover mb-4"
+                            alt="Profile"
+                          />
+                          <h3 className="text-lg font-bold">{selectedSeller.name}</h3>
+                          <p className="text-blue-600 font-medium">@{selectedSeller.username}</p>
+                          <div className="mt-4 w-full space-y-2">
+                            <div className="flex justify-between text-sm py-2 border-b">
+                              <span className="text-gray-500">Organization:</span>
+                              <span className="font-medium">{selectedSeller.organization}</span>
+                            </div>
+                            <div className="flex justify-between text-sm py-2 border-b">
+                              <span className="text-gray-500">Joined:</span>
+                              <span className="font-medium">{new Date(selectedSeller.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm py-2 border-b">
+                              <span className="text-gray-500">Eco Points:</span>
+                              <span className="font-bold text-green-600 flex items-center"><FaLeaf className="mr-1"/> {selectedSeller.ecoPoints}</span>
+                            </div>
+                          </div>
+                       </div>
+                       
+                       <div className="md:col-span-2 space-y-6">
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                              <FaBox className="mr-2 text-blue-500"/> Marketplace Products
+                            </h4>
+                            <div className="grid grid-cols-2 gap-3">
+                              {products.filter(p => p.seller_id?._id === selectedSeller._id || p.seller_id === selectedSeller._id).length > 0 ? (
+                                products.filter(p => p.seller_id?._id === selectedSeller._id || p.seller_id === selectedSeller._id).slice(0, 4).map(p => (
+                                  <div key={p._id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <p className="font-medium text-sm truncate">{p.name}</p>
+                                    <p className="text-blue-600 font-bold text-xs">₹{p.price}</p>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500 italic">No products listed in marketplace yet.</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="border-t pt-6">
+                            <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                              <FaSync className="mr-2 text-green-500"/> Recycling Impact (Developed Products)
+                            </h4>
+                            <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                                <div className="flex justify-between items-center mb-4">
+                                  <div>
+                                    <p className="text-xs text-green-600 font-bold uppercase tracking-wider">Total Waste Processed</p>
+                                    <p className="text-2xl font-black text-green-700">
+                                      {recyclingData
+                                        .filter(r => (r.sellerId?._id === selectedSeller._id || r.sellerId === selectedSeller._id))
+                                        .reduce((acc, curr) => acc + (curr.totalWasteCollected || 0), 0)} Kg
+                                    </p>
+                                  </div>
+                                  <FaRecycle className="text-green-200 text-4xl" />
+                                </div>
+                                <div className="space-y-2">
+                                  <p className="text-xs font-bold text-green-800 uppercase">Products Developed from Waste:</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {Array.from(new Set(
+                                      recyclingData
+                                        .filter(r => (r.sellerId?._id === selectedSeller._id || r.sellerId === selectedSeller._id))
+                                        .flatMap(r => r.recycledProducts?.map(rp => rp.itemName) || [])
+                                    )).map((prodName, idx) => (
+                                      <span key={idx} className="px-2 py-1 bg-white text-green-700 text-[10px] font-bold rounded shadow-sm border border-green-200">
+                                        {prodName}
+                                      </span>
+                                    ))}
+                                    {recyclingData.filter(r => (r.sellerId?._id === selectedSeller._id || r.sellerId === selectedSeller._id)).length === 0 && (
+                                      <p className="text-xs text-green-600 italic">No recycling data recorded yet.</p>
+                                    )}
+                                  </div>
+                                </div>
+                            </div>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                    <button 
+                      onClick={() => setShowSellerModal(false)}
+                      className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors"
+                    >
+                      Close Profile
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

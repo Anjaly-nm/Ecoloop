@@ -30,6 +30,7 @@ const AdminPage = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [gasAlert, setGasAlert] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   React.useEffect(() => {
     const fetchGasAlert = async () => {
@@ -47,8 +48,29 @@ const AdminPage = () => {
       }
     };
 
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:4321';
+        const response = await fetch(`${apiUrl}/api/notifications`, {
+          headers: { 'token': token }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setUnreadCount(data.unreadCount || 0);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      }
+    };
+
     fetchGasAlert();
-    const interval = setInterval(fetchGasAlert, 10000);
+    fetchNotifications();
+    const interval = setInterval(() => {
+      fetchGasAlert();
+      fetchNotifications();
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -171,9 +193,14 @@ const AdminPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2.5 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-all border border-slate-200 group">
+            <button 
+              onClick={() => navigate('/admin/notifications')}
+              className="relative p-2.5 bg-white text-slate-600 rounded-xl hover:bg-slate-50 transition-all border border-slate-200 group"
+            >
               <Bell size={18} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full border-2 border-white shadow-[0_0_8px_rgba(168,85,247,0.5)]"></span>
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full border-2 border-white shadow-[0_0_8px_rgba(168,85,247,0.5)] animate-pulse"></span>
+              )}
             </button>
             <div className="h-10 w-[1px] bg-slate-200 mx-2"></div>
             <div 

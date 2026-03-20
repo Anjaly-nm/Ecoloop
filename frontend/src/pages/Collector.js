@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   FaSignOutAlt,
   FaSun,
@@ -10,9 +10,7 @@ import {
   FaCheckCircle,
   FaBolt,
   FaArrowLeft,
-  FaArrowRight,
   FaCalendarAlt,
-  FaWeightHanging,
   FaHome,
   FaMapMarkerAlt,
   FaTruck,
@@ -22,7 +20,6 @@ import {
   FaBell,
   FaMap,
   FaCalendarDay,
-  FaCalendarWeek,
   FaHistory,
   FaRecycle,
   FaFileAlt,
@@ -43,8 +40,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   CartesianGrid
 } from "recharts";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -125,7 +120,7 @@ const CollectorDashboardModern = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [localReasons, setLocalReasons] = useState({});
 
-  const fetchData = async (silent = false) => {
+  const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     console.log("🔗 Fetching Dashboard Data Parallel...");
     try {
@@ -198,11 +193,11 @@ const CollectorDashboardModern = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [scheduleFilter, navigate, API_BASE, PICKUPS_API, DASHBOARD_API]);
 
   useEffect(() => {
     fetchData();
-  }, [scheduleFilter]);
+  }, [fetchData]);
 
   const getCategoryStyle = (name) => {
     const cat = name?.toLowerCase() || "";
@@ -417,16 +412,28 @@ const CollectorDashboardModern = () => {
                 </h1>
                 <p className="text-xs text-slate-500 font-medium">Hello, {user?.name} • Your EcoLoop Collector Portal</p>
               </div>
-              <div 
-                className="bg-white rounded-xl shadow-sm border border-slate-100 flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 transition-all"
-                onClick={() => navigate('/profile')}
-              >
-                <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-xs font-bold">
-                  {user?.name?.charAt(0)}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900 truncate max-w-[120px]">{user?.name}</p>
-                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Collector ID: ...{(user?.id || user?._id)?.slice(-4)}</p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveTab("notifications")}
+                  className="relative p-2.5 bg-white rounded-xl border border-slate-100 text-slate-400 hover:text-emerald-600 hover:bg-slate-50 transition-all shadow-sm group"
+                >
+                  <FaBell size={18} />
+                  {notifications.filter(n => !n.isRead).length > 0 && (
+                    <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                  )}
+                </button>
+                <div className="h-8 w-px bg-slate-200 mx-1" />
+                <div 
+                  className="bg-white rounded-xl shadow-sm border border-slate-100 flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 transition-all"
+                  onClick={() => navigate('/profile')}
+                >
+                  <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-xs font-bold">
+                    {user?.name?.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900 truncate max-w-[120px]">{user?.name}</p>
+                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Collector ID: ...{(user?.id || user?._id)?.slice(-4)}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -472,7 +479,7 @@ const CollectorDashboardModern = () => {
                 {activeTab === "dashboard" && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     {[
-                      { label: "My Works", value: analytics?.analytics?.total || 0, color: "emerald", icon: FaTruck },
+                      { label: "My Works", value: (analytics?.analytics?.total || 0) + (cleaningEvents?.length || 0), color: "emerald", icon: FaTruck },
                       { label: "Completion", value: `${analytics?.analytics?.completionRate || 0}%`, color: "indigo", icon: FaCheckCircle },
                       { label: "Monthly", value: analytics?.analytics?.monthly || 0, color: "sky", icon: FaHistory },
                       { label: "Efficiency", value: analytics?.analytics?.efficiencyScore || 0, color: "amber", icon: FaBolt }
@@ -509,22 +516,23 @@ const CollectorDashboardModern = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {pickups.length === 0 ? (
+                      {pickups.length === 0 && (activeTab !== "dashboard" || cleaningEvents.filter(req => req.status !== 'completed').length === 0) ? (
                         <tr>
                           <td colSpan="4" className="px-6 py-20 text-center">
                             <div className="flex flex-col items-center gap-3">
                               <FaTruck className="text-slate-200 text-3xl" />
-                              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No active pickups found at the moment</p>
+                              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No active tasks found at the moment</p>
                             </div>
                           </td>
                         </tr>
                       ) : (
-                        (activeTab === "collected"
-                          ? pickups.filter(p => p.status === "collected")
-                          : activeTab === "pending_tasks"
-                            ? pickups.filter(p => p.status === "pending")
-                            : pickups.filter(p => p.status !== "collected")
-                        ).map((pickup) => (
+                        <>
+                          {(activeTab === "collected"
+                            ? pickups.filter(p => p.status === "collected")
+                            : activeTab === "pending_tasks"
+                              ? pickups.filter(p => p.status === "pending")
+                              : pickups.filter(p => p.status !== "collected")
+                          ).map((pickup) => (
                           <tr key={pickup._id} className="hover:bg-slate-50/50 transition-all">
                             <td className="px-6 py-5">
                               <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
@@ -591,8 +599,52 @@ const CollectorDashboardModern = () => {
                               </div>
                             </td>
                           </tr>
-                        ))
-                      )}
+                        ))}
+                        {activeTab === "dashboard" && cleaningEvents.filter(req => req.status !== 'completed').map((req) => (
+                          <tr key={req._id} className="hover:bg-purple-50/50 transition-all bg-purple-50/10">
+                            <td className="px-6 py-5">
+                              <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                {req.user_id?.name || "User"}
+                              </p>
+                              <div className="mt-1 flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit bg-purple-100 text-purple-700 border border-white">
+                                <FaStar size={10} />
+                                <span className="text-[9px] font-black uppercase tracking-wider">{req.eventType} event</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              <p className="text-xs font-bold text-slate-700 tracking-tight line-clamp-2 max-w-[200px]">{req.location}</p>
+                              <p className="text-[10px] text-slate-400">{new Date(req.scheduled_date).toLocaleDateString()} at {req.time}</p>
+                            </td>
+                            <td className="px-6 py-5 whitespace-nowrap">
+                              <span className="px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-purple-100 text-purple-700">
+                                {req.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                              <div className="flex flex-col items-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      const token = localStorage.getItem("token");
+                                      await axios.put(`${API_BASE}/cleaning-requests/${req._id}/complete`, {}, { headers: { token } });
+                                      toast.success("Event marked as completed");
+                                      fetchData(true);
+                                    } catch (error) {
+                                      toast.error("Failed to update status");
+                                      console.error(error);
+                                    }
+                                  }}
+                                  className="px-4 py-2 bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-purple-700 shadow-md shadow-purple-200 transition-all active:scale-95"
+                                >
+                                  Done
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </>
+                    )}
                     </tbody>
                   </table>
                 </div>

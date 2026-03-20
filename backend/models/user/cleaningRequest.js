@@ -13,7 +13,13 @@ const cleaningRequestSchema = new mongoose.Schema({
         default: "pending"
     },
     team: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // Changed from single collector_id
-    additionalNotes: { type: String, default: "" }
+    additionalNotes: { type: String, default: "" },
+    priority: { 
+        type: String, 
+        enum: ["Low", "Medium", "High"], 
+        default: "Medium" 
+    },
+    images: [{ type: String }] // Array of image URLs
 }, { timestamps: true });
 
 module.exports = mongoose.model("CleaningRequest", cleaningRequestSchema);

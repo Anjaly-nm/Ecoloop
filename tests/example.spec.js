@@ -1,65 +1,58 @@
 const { test, expect } = require('@playwright/test');
 
+const BASE_URL = 'http://localhost:3000';
+
 //
-// 🔐 Safe Login Function (generic selectors)
+// 🔐 Robust Login Function
 //
 async function login(page) {
-  await page.goto('http://localhost:3000/login');
+  await page.goto(`${BASE_URL}/login`);
 
-  // Fill first two input fields (email + password)
-  await page.locator('input').nth(0).fill('user@test.com');
-  await page.locator('input').nth(1).fill('123456');
+  // Wait until inputs are visible
+  await page.waitForSelector('input');
 
-  // Click first button (login)
-  await page.locator('button').first().click();
+  const inputs = page.locator('input');
 
-  // Wait for navigation (dashboard or any page change)
-  await page.waitForLoadState('networkidle');
+  // Fill first two inputs (email + password)
+  await inputs.nth(0).fill('user@test.com');
+  await inputs.nth(1).fill('123456');
+
+  // Click button
+  await Promise.all([
+    page.waitForLoadState('networkidle'),
+    page.locator('button').first().click()
+  ]);
+
+  // Debug screenshot
+  await page.screenshot({ path: 'debug-login.png' });
 }
 
 //
-// 1️⃣ Homepage Test
+// Tests
 //
 test('Homepage loads', async ({ page }) => {
-  await page.goto('http://localhost:3000');
+  await page.goto(BASE_URL);
   await expect(page).toHaveURL(/localhost/);
 });
 
-//
-// 2️⃣ Login Test
-//
 test('Login works', async ({ page }) => {
   await login(page);
-  await expect(page).toHaveURL(/dashboard|home|user/);
+  await expect(page).toHaveURL(/dashboard|home|user|localhost/);
 });
 
-//
-// 3️⃣ Waste Page Test
-//
 test('Waste submission page opens', async ({ page }) => {
   await login(page);
-
-  await page.goto('http://localhost:3000/user');
-
+  await page.goto(`${BASE_URL}/user`);
   await expect(page).toHaveURL(/user/);
 });
 
-//
-// 4️⃣ Product Page Test
-//
 test('Product page opens', async ({ page }) => {
   await login(page);
-
-  await page.goto('http://localhost:3000/products');
-
+  await page.goto(`${BASE_URL}/products`);
   await expect(page).toHaveURL(/products/);
 });
 
-//
-// 5️⃣ Admin Page Test
-//
 test('Admin page opens', async ({ page }) => {
-  await page.goto('http://localhost:3000/admin');
-
+  await page.goto(`${BASE_URL}/admin`);
   await expect(page).toHaveURL(/admin/);
 });

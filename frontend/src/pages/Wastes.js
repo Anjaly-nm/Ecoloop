@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 // Removed FaCheckCircle to fix the ESLint warning
-import { FaUserCircle, FaTrashAlt, FaLeaf, FaChartLine, FaSignOutAlt, FaTasks, FaEnvelope, FaCalendarAlt, FaSyncAlt, FaTruckLoading, FaExclamationTriangle, FaListOl, FaShoppingBag, FaBoxOpen, FaCreditCard, FaMapMarkerAlt, FaHistory } from "react-icons/fa";
+import { FaUserCircle, FaTrashAlt, FaLeaf, FaChartLine, FaSignOutAlt, FaTasks, FaEnvelope, FaCalendarAlt, FaSyncAlt, FaTruckLoading, FaExclamationTriangle, FaListOl, FaBoxOpen, FaHistory } from "react-icons/fa";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+// recharts import removed as it was unused
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import axios from "axios";
@@ -54,9 +54,8 @@ const Dashboard = () => {
     const [userId, setUserId] = useState("");
     const [categories, setCategories] = useState([]);
     const [submissions, setSubmissions] = useState([]);
-    const [orders, setOrders] = useState([]);
+    const [, setOrders] = useState([]);
     const [activeTab, setActiveTab] = useState("home");
-    const [selectedOrder, setSelectedOrder] = useState(null);
 
     // 🔑 UPDATED STATE: Includes estimated_weight
     const [formData, setFormData] = useState({
@@ -239,23 +238,6 @@ const Dashboard = () => {
 
     // --- Chart Data Preparation (Omitted for brevity) ---
 
-    const chartData = submissions.filter(s => s.status === "collected").map(s => ({
-        date: moment(s.scheduled_date).format('MM/DD'),
-        category: s.category
-    }));
-
-    const aggregatedDataMap = chartData.reduce((acc, item) => {
-        const dateKey = item.date;
-        if (!acc[dateKey]) { acc[dateKey] = { date: dateKey }; categories.forEach(cat => { acc[dateKey][cat.name] = 0; }); }
-        if (item.category) { acc[dateKey][item.category] = (acc[dateKey][item.category] || 0) + 1; }
-        return acc;
-    }, {});
-
-    const aggregatedData = Object.values(aggregatedDataMap)
-        .sort((a, b) => moment(a.date, 'MM/DD').valueOf() - moment(b.date, 'MM/DD').valueOf());
-
-    const uniqueCategoryNames = categories.map(c => c.name);
-
     // --- KPI Cards Data (Omitted for brevity) ---
     const completedSubmissions = submissions.filter(s => s.status === "collected").length;
     const totalSubmissions = submissions.length;
@@ -264,13 +246,11 @@ const Dashboard = () => {
     // --- Render Functions for Tabs (Omitted for brevity) ---
 
     const RenderHomeDashboard = () => {
-        // Calculate Eco Impact
-        const collectedWeight = submissions
-            .filter(s => s.status === "collected" && s.weight)
-            .reduce((sum, s) => sum + parseFloat(s.weight || 0), 0);
+        // Calculate Eco Impact based on number of collected submissions
+        const totalCollectedSubmissions = submissions.filter(s => s.status === "collected").length;
 
-        const co2Saved = (collectedWeight * 2.5).toFixed(1); // 2.5kg CO2 per kg waste recycled
-        const treesSaved = (collectedWeight * 0.05).toFixed(2); // Symbolic metric
+        const co2Saved = (totalCollectedSubmissions * 5.0).toFixed(1); // Estimated 5kg CO2 saved per submission
+        const treesSaved = (totalCollectedSubmissions * 0.12).toFixed(2); // Estimated 0.12 tree equivalent per submission
 
         const recentActivity = [...submissions]
             .sort((a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date))
@@ -334,8 +314,8 @@ const Dashboard = () => {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10 hover:bg-white/15 transition-all">
-                                <p className="text-emerald-300 text-xs font-bold uppercase mb-2">Total Recycled</p>
-                                <p className="text-4xl font-black">{collectedWeight.toFixed(1)} <span className="text-xl font-normal opacity-70">kg</span></p>
+                                <p className="text-emerald-300 text-xs font-bold uppercase mb-2">Total Submissions</p>
+                                <p className="text-4xl font-black">{totalCollectedSubmissions} <span className="text-xl font-normal opacity-70">Submits</span></p>
                                 <div className="mt-4 flex items-center text-emerald-400 text-sm gap-1">
                                     <FaTrashAlt /> Helping the planet
                                 </div>

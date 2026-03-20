@@ -1,17 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaPlus, FaEdit, FaTrash, FaImage, FaBox, FaStore, FaChartBar, FaShoppingCart, FaUsers, FaUser, FaTimes, FaCamera, FaExclamationTriangle, FaComments, FaArrowLeft } from "react-icons/fa";
+import { 
+  FaPlus, FaEdit, FaTrash, FaImage, FaBox, FaStore, FaChartBar, 
+  FaShoppingCart, FaUsers, FaUser, FaTimes, FaCamera, 
+  FaExclamationTriangle, FaComments, FaArrowLeft, FaShoppingBag, 
+  FaCalendarAlt, FaRecycle, FaIndustry, FaGlobe, FaChartLine, 
+  FaBell, FaClock, FaLeaf, FaGem, FaTrophy, FaArrowUp, 
+  FaArrowDown 
+} from "react-icons/fa";
 
 const SellerDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [allOrders, setAllOrders] = useState([]); // Track all orders to identify customers
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  // Recycling Data State
+  const [recyclingData, setRecyclingData] = useState([]);
+  const [showRecyclingForm, setShowRecyclingForm] = useState(false);
+  const [editingRecycling, setEditingRecycling] = useState(null);
+  const [recyclingForm, setRecyclingForm] = useState({
+    month: "",
+    totalWasteCollected: "",
+    wasteBreakdown: [{ wasteType: "", quantity: "" }],
+    recycledProducts: [{ itemName: "", quantity: "" }]
+  });
   const [orderFilter, setOrderFilter] = useState("new"); // Filter for orders: "new" or "all"
   const [showAddProductForm, setShowAddProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -63,7 +80,6 @@ const SellerDashboard = () => {
   const [selectedConversation, setSelectedConversation] = useState(null); // Currently open chat
   const [chatMessages, setChatMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
-  const [refreshChatInterval, setRefreshChatInterval] = useState(null); // To clear interval on close
 
   // Effect to update customers when orders change
   const extractCustomersFromOrders = React.useCallback((orders) => {
@@ -125,7 +141,6 @@ const SellerDashboard = () => {
       console.log('Refresh orders API response:', ordersRes.data);
       const refreshedOrders = ordersRes.data.orders || [];
       setOrders(refreshedOrders);
-      setAllOrders(refreshedOrders); // Update all orders
 
       // Update customers based on refreshed orders
       const updatedCustomers = extractCustomersFromOrders(refreshedOrders);
@@ -257,7 +272,6 @@ const SellerDashboard = () => {
 
           const fetchedOrders = ordersRes.data.orders || [];
           setOrders(fetchedOrders);
-          setAllOrders(fetchedOrders);
 
           // Extract unique customers from orders
           const uniqueCustomers = extractCustomersFromOrders(fetchedOrders);
@@ -286,6 +300,9 @@ const SellerDashboard = () => {
 
         // Fetch profile data
         fetchProfileData();
+        
+        // Fetch recycling data
+        fetchRecyclingData();
 
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -297,6 +314,156 @@ const SellerDashboard = () => {
 
     fetchData();
   }, [navigate, extractCustomersFromOrders]);
+
+  const fetchRecyclingData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const base = process.env.REACT_APP_API_URL || "http://localhost:4321";
+      const res = await axios.get(`${base}/api/recycling/my-data`, { headers: { token } });
+      setRecyclingData(res.data.data || []);
+    } catch (err) {
+      console.error("Error fetching recycling data:", err);
+    }
+  };
+
+  const handleRecyclingInputChange = (e) => {
+    const { name, value } = e.target;
+    // Basic validation: month is text, others are numbers
+    if (name !== 'month') {
+      if (value !== "" && isNaN(value)) return;
+    }
+    setRecyclingForm({ ...recyclingForm, [name]: value });
+  };
+
+  const handleRecyclingSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("token");
+      const base = process.env.REACT_APP_API_URL || "http://localhost:4321";
+
+      // Validation
+      if (!recyclingForm.month) return alert("Please select a month");
+      if (!recyclingForm.totalWasteCollected || isNaN(recyclingForm.totalWasteCollected)) return alert("Please enter a valid total waste collected amount");
+
+      const payload = {
+        month: recyclingForm.month,
+        totalWasteCollected: Number(recyclingForm.totalWasteCollected),
+        wasteBreakdown: recyclingForm.wasteBreakdown
+          .filter(wb => wb.wasteType && wb.wasteType.trim() !== "")
+          .map(wb => ({
+            wasteType: wb.wasteType,
+            quantity: Number(wb.quantity) || 0
+          })),
+        recycledProducts: recyclingForm.recycledProducts
+          .filter(p => p.itemName && p.itemName.trim() !== "")
+          .map(p => ({
+            itemName: p.itemName,
+            quantity: Number(p.quantity) || 0
+          }))
+      };
+
+      if (editingRecycling) {
+        await axios.put(`${base}/api/recycling/update/${editingRecycling._id}`, payload, { headers: { token } });
+        alert("Recycling data updated successfully!");
+      } else {
+        await axios.post(`${base}/api/recycling/add`, payload, { headers: { token } });
+        alert("Recycling data added successfully!");
+      }
+
+      setShowRecyclingForm(false);
+      setEditingRecycling(null);
+      setRecyclingForm({
+        month: "",
+        totalWasteCollected: "",
+        wasteBreakdown: [{ wasteType: "", quantity: "" }],
+        recycledProducts: [{ itemName: "", quantity: "" }]
+      });
+      fetchRecyclingData();
+    } catch (err) {
+      console.error("Error saving recycling data:", err);
+      alert("Failed to save data");
+    }
+  };
+
+  const handleEditRecycling = (item) => {
+    setEditingRecycling(item);
+    setRecyclingForm({
+      month: item.month,
+      totalWasteCollected: item.totalWasteCollected.toString(),
+      wasteBreakdown: item.wasteBreakdown?.length > 0
+        ? item.wasteBreakdown.map(wb => ({ wasteType: wb.wasteType, quantity: wb.quantity.toString() }))
+        : [{ wasteType: "", quantity: "" }],
+      recycledProducts: item.recycledProducts?.length > 0
+        ? item.recycledProducts.map(p => ({ itemName: p.itemName, quantity: p.quantity.toString() }))
+        : [{ itemName: "", quantity: "" }]
+    });
+    setShowRecyclingForm(true);
+  };
+
+  const addWasteBreakdown = () => {
+    setRecyclingForm({
+      ...recyclingForm,
+      wasteBreakdown: [...recyclingForm.wasteBreakdown, { wasteType: "", quantity: "" }]
+    });
+  };
+
+  const updateWasteBreakdown = (idx, field, value) => {
+    if (field === 'quantity' && value !== "" && isNaN(value)) return;
+    const newBreakdown = [...recyclingForm.wasteBreakdown];
+    newBreakdown[idx] = { ...newBreakdown[idx], [field]: value };
+    setRecyclingForm({ ...recyclingForm, wasteBreakdown: newBreakdown });
+  };
+
+  const removeWasteBreakdown = (idx) => {
+    const newBreakdown = [...recyclingForm.wasteBreakdown];
+    newBreakdown.splice(idx, 1);
+    setRecyclingForm({ ...recyclingForm, wasteBreakdown: newBreakdown });
+  };
+
+  const addRecycledProduct = () => {
+    setRecyclingForm({
+      ...recyclingForm,
+      recycledProducts: [...recyclingForm.recycledProducts, { itemName: "", quantity: "" }]
+    });
+  };
+
+  const updateRecycledProduct = (idx, field, value) => {
+    if (field === 'quantity' && value !== "" && isNaN(value)) return;
+    const newProds = [...recyclingForm.recycledProducts];
+    newProds[idx] = { ...newProds[idx], [field]: value };
+    setRecyclingForm({ ...recyclingForm, recycledProducts: newProds });
+  };
+
+  const removeRecycledProduct = (idx) => {
+    const newProds = [...recyclingForm.recycledProducts];
+    newProds.splice(idx, 1);
+    setRecyclingForm({ ...recyclingForm, recycledProducts: newProds });
+  };
+
+  const handleDeleteRecycling = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this entry?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const base = process.env.REACT_APP_API_URL || "http://localhost:4321";
+      await axios.delete(`${base}/api/recycling/delete/${id}`, { headers: { token } });
+      alert("Entry deleted successfully!");
+      fetchRecyclingData();
+    } catch (err) {
+      console.error("Error deleting recycling data:", err);
+    }
+  };
+
+  const calculateTotalStock = () => {
+    const stockMap = {};
+    recyclingData.forEach(entry => {
+      entry.recycledProducts?.forEach(prod => {
+        if (prod.itemName && prod.itemName.trim() !== "") {
+          stockMap[prod.itemName] = (stockMap[prod.itemName] || 0) + (prod.quantity || 0);
+        }
+      });
+    });
+    return stockMap;
+  };
 
   // Function to extract unique customers from orders
   // Moved outside component (or to useCallback) to avoid dependency cycle
@@ -604,8 +771,28 @@ const SellerDashboard = () => {
     }
   };
 
+  // Handle edit product
+  const handleEditProduct = (product) => {
+    setEditingProduct(product);
+    setProductForm({
+      name: product.name,
+      description: product.description || "",
+      price: product.price.toString(),
+      stock: product.stock.toString(),
+      category: product.category || "",
+      wasteType: product.wasteType || "",
+      wasteQuantity: product.wasteQuantity || "",
+      productOutputQuantity: product.productOutputQuantity || "",
+      unit: product.unit || "pieces",
+      ecoPointsEligibility: product.ecoPointsEligibility || "No",
+      ecoCertification: product.ecoCertification || "None",
+      images: [] // Reset images for update unless user picks new ones
+    });
+    setShowAddProductForm(true);
+  };
+
   // Handle delete product
-  const handleDelete = async (productId) => {
+  const handleDeleteProduct = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
         const token = localStorage.getItem("token");
@@ -620,6 +807,7 @@ const SellerDashboard = () => {
           headers: { token }
         });
         setProducts(res.data.products || []);
+        alert("Product deleted successfully!");
 
       } catch (err) {
         console.error("Error deleting product:", err);
@@ -709,152 +897,219 @@ const SellerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 font-sans text-gray-800">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-green-600 to-teal-500 p-2 rounded-lg text-white shadow-lg shadow-green-200">
-                <FaStore className="text-xl" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight">Seller Dashboard</h1>
-                <p className="text-xs text-gray-500 font-medium">Manage your eco-friendly business</p>
-              </div>
+    <div className="flex min-h-screen bg-[#F9FAFB] font-sans text-gray-800 antialiased">
+      {/* Sidebar Navigation */}
+      <aside className="w-64 bg-white border-r border-gray-100 flex-shrink-0 flex flex-col fixed inset-y-0 z-40">
+        <div className="p-6 border-b border-gray-50 bg-gradient-to-br from-green-50/30 to-white">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-tr from-green-600 to-teal-500 p-2.5 rounded-2xl text-white shadow-xl shadow-green-100 ring-4 ring-green-50">
+              <FaStore className="text-xl" />
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => {
-                  setShowMessagesModal(true);
-                  fetchConversations();
-                }}
-                className="p-2 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 relative"
+            <div>
+              <h1 className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight leading-tight">EcoLoop</h1>
+              <p className="text-[10px] text-green-600 font-black uppercase tracking-[0.2em]">Seller Hub</p>
+            </div>
+          </div>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto pt-8">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: FaChartLine },
+            { id: 'products', label: 'Inventory', icon: FaBox },
+            { id: 'orders', label: 'Orders', icon: FaShoppingCart },
+            { id: 'recycling', label: 'Recycling', icon: FaRecycle },
+            { id: 'analytics', label: 'Insights', icon: FaChartBar },
+            { id: 'customers', label: 'Customers', icon: FaUsers },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group ${
+                activeTab === item.id 
+                ? "bg-green-600 text-white shadow-lg shadow-green-200" 
+                : "text-gray-500 hover:bg-gray-50 hover:text-green-600 hover:pl-5"
+              }`}
+            >
+              <item.icon className={`text-lg transition-transform duration-300 ${activeTab === item.id ? "scale-110" : "group-hover:scale-110"}`} />
+              <span className="font-bold text-sm tracking-wide">{item.label}</span>
+              {activeTab === item.id && (
+                <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full shadow-inner animate-pulse" />
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-gray-50">
+
+          
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-2xl transition-all font-bold text-sm group"
+          >
+            <FaArrowLeft className="text-lg group-hover:-translate-x-1 transition-transform" />
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 ml-64 min-h-screen flex flex-col">
+        {/* Top Header */}
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 px-8 flex justify-between items-center transition-all">
+          <div className="flex flex-col">
+            <h2 className="text-gray-900 font-black text-xl tracking-tight capitalize">{activeTab.replace("-", " ")}</h2>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
+              Welcome back, {profileData?.name || 'Seller'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 mr-4">
+              <button 
+                onClick={refreshAllData}
+                className="p-2.5 bg-gray-50 text-gray-500 rounded-xl hover:bg-green-50 hover:text-green-600 transition-all border border-transparent hover:border-green-100"
+                title="Refresh Analytics"
+              >
+                <FaChartLine className="text-lg" />
+              </button>
+              <button 
+                onClick={() => { setShowMessagesModal(true); fetchConversations(); }}
+                className="p-2.5 bg-gray-50 text-gray-500 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all border border-transparent hover:border-blue-100 relative"
                 title="Messages"
               >
-                <FaComments className="text-xl" />
-                {/* Optional: Add badge for unread messages here */}
+                <FaComments className="text-lg" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-1 ring-red-400" />
               </button>
+              <button className="p-2.5 bg-gray-50 text-gray-500 rounded-xl hover:bg-yellow-50 hover:text-yellow-600 transition-all border border-transparent hover:border-yellow-100 relative" title="Notifications">
+                <FaBell className="text-lg" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full border-2 border-white" />
+              </button>
+            </div>
 
-              <button
-                onClick={handleProfileClick}
-                className="group p-1 rounded-full hover:bg-gray-100 transition-all duration-200 relative ring-2 ring-transparent hover:ring-green-100"
-                title="View Profile"
-              >
-                {profileData && profileData.profilePicture ? (
+            <div className="h-8 w-px bg-gray-100 mx-2" />
+
+            <button
+              onClick={handleProfileClick}
+              className="group flex items-center gap-3 p-1.5 pl-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-green-100 hover:bg-green-50 transition-all"
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-black text-gray-900 leading-none">{profileData?.name || 'Account'}</p>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter mt-1">{profileData?.ecoPoints || '0'} Points</p>
+              </div>
+              <div className="relative">
+                {profileData?.profilePicture ? (
                   <img
                     src={getImageUrl(profileData.profilePicture)}
-                    alt={profileData.name}
-                    className="w-10 h-10 rounded-full object-cover shadow-md group-hover:shadow-lg transition-transform group-hover:scale-105"
-                    style={{ display: 'block' }}
-                    onError={(e) => {
-                      console.error('Profile image failed to load:', e.target.src);
-                      console.error('Profile picture data:', profileData.profilePicture);
-                    }}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-xl object-cover shadow-lg group-hover:scale-105 transition-transform"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 group-hover:text-green-600 group-hover:bg-green-50 transition-colors">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-green-600 shadow-sm border border-green-50">
                     <FaUser className="text-lg" />
                   </div>
                 )}
-              </button>
-
-              <div className="h-8 w-px bg-gray-200 mx-2"></div>
-
-              <button
-                onClick={refreshAllData}
-                className="px-5 py-2.5 bg-white text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 text-sm font-semibold shadow-sm hover:shadow active:scale-95"
-              >
-                Refresh
-              </button>
-              <button
-                onClick={handleLogout}
-                className="px-5 py-2.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-xl transition-all duration-200 text-sm font-semibold active:scale-95"
-              >
-                Logout
-              </button>
-            </div>
+                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm" />
+              </div>
+            </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        {/* Dashboard Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Total Products</p>
-                <h3 className="text-3xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{products.length}</h3>
+        {/* Content Section */}
+        <main className="flex-1 p-8 space-y-10 overflow-y-auto">
+          {activeTab === 'dashboard' && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
+
+
+              {/* Stats Cards Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {[
+                  { label: "Total Revenue", value: formatCurrency(orders.reduce((acc, curr) => acc + (curr.totalAmount || 0), 0)), trend: "+12.4%", up: true, icon: FaGem, color: "blue", bg: "bg-blue-500" },
+                  { label: "Active Orders", value: orders.filter(o => ['pending', 'confirmed', 'ready', 'assigned', 'shipped', 'in-transit', 'processing'].includes(o.status?.toLowerCase())).length, trend: "Pending Processing", up: true, icon: FaClock, color: "teal", bg: "bg-teal-500" },
+                  { label: "Total Waste Processed", value: `${recyclingData.reduce((acc, curr) => acc + (curr.totalWasteCollected || 0), 0)} Kg`, trend: "+28%", up: true, icon: FaRecycle, color: "green", bg: "bg-green-500" },
+                  { label: "Customer Rating", value: "4.9/5", trend: "from 118 reviews", up: true, icon: FaTrophy, color: "orange", bg: "bg-orange-500" },
+                ].map((stat, i) => (
+                  <div key={i} className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 group relative overflow-hidden">
+                    <div className="relative z-10">
+                      <div className={`p-4 rounded-2xl ${stat.bg} text-white w-fit mb-6 shadow-lg transition-transform duration-500`}>
+                        <stat.icon className="text-xl" />
+                      </div>
+                      <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                      <h3 className="text-4xl font-black text-gray-900 tracking-tighter mb-2 group-hover:scale-105 transition-transform origin-left">{stat.value}</h3>
+                      <div className="flex items-center gap-1.5 font-black text-[10px] tracking-wide">
+                        <span className={stat.up ? "text-green-600" : "text-red-500"}>
+                          {stat.up ? <FaArrowUp className="inline mb-1" /> : <FaArrowDown className="inline mb-1" />} {stat.trend}
+                        </span>
+                        <span className="text-gray-400">vs last month</span>
+                      </div>
+                    </div>
+                    {/* Background blob */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gray-50 rounded-full translate-x-10 -translate-y-10 group-hover:bg-green-50 transition-colors duration-500" />
+                  </div>
+                ))}
               </div>
-              <div className="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors">
-                <FaBox className="text-blue-600 text-xl" />
+
+              {/* Eco Impact Highlights */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="space-y-8">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-xl font-bold text-gray-900 tracking-tight">Eco Contribution Tracking</h4>
+                        <p className="text-sm text-gray-500 mt-1">Environmental impact metrics calculated from your validated recycling logs.</p>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-xl border border-green-100">
+                        <FaLeaf className="text-xs" /> verified partner
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-6">
+                      <div className="p-6 rounded-[1.5rem] bg-gray-50/50 border border-gray-100 hover:border-green-200 hover:bg-green-50/30 transition-all group">
+                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 group-hover:text-green-600">CO2 Reduced</p>
+                         <h5 className="text-3xl font-black text-gray-900 tracking-tighter">845 <span className="text-xs font-bold text-gray-400">Kg</span></h5>
+                      </div>
+                      <div className="p-6 rounded-[1.5rem] bg-gray-50/50 border border-gray-100 hover:border-green-200 hover:bg-green-50/30 transition-all group">
+                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 group-hover:text-green-600">Trees Saved</p>
+                         <h5 className="text-3xl font-black text-gray-900 tracking-tighter">42 <span className="text-xs font-bold text-gray-400">units</span></h5>
+                      </div>
+                      <div className="p-6 rounded-[1.5rem] bg-gray-50/50 border border-gray-100 hover:border-green-200 hover:bg-green-50/30 transition-all group">
+                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 group-hover:text-green-600">Impact Score</p>
+                         <h5 className="text-3xl font-black text-gray-900 tracking-tighter">74 <span className="text-xs font-bold text-gray-400">%</span></h5>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-bold text-xl text-gray-900">Certification</h4>
+                      <FaGlobe className="text-green-200 text-xl" />
+                    </div>
+                    <p className="text-gray-500 text-xs leading-relaxed font-medium">Earn 'Eco-Pioneer' at 1000kg. Only 158kg remaining to reach the next milestone.</p>
+                  </div>
+                  
+                  <div className="space-y-3 mt-6">
+                    <div className="flex justify-between items-end text-[10px] font-black uppercase tracking-widest">
+                       <span className="text-gray-400">Progress</span>
+                       <span className="text-green-600">84.2%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                       <div className="bg-green-500 h-full transition-all duration-1000 relative" style={{ width: '84.2%' }}>
+                         <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                       </div>
+                    </div>
+                  </div>
+                  
+                  <button onClick={() => setActiveTab('recycling')} className="w-full mt-8 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs hover:bg-black transition-all shadow-lg shadow-gray-100 active:scale-95">
+                    View Benchmarks
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Active Products</p>
-                <h3 className="text-3xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-                  {products.filter(p => p.status === "active").length}
-                </h3>
-              </div>
-              <div className="p-3 bg-green-50 rounded-xl group-hover:bg-green-100 transition-colors">
-                <FaStore className="text-green-600 text-xl" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Total Orders</p>
-                <h3 className="text-3xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">{orders.length}</h3>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-xl group-hover:bg-purple-100 transition-colors">
-                <FaShoppingCart className="text-purple-600 text-xl" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">Total Customers</p>
-                <h3 className="text-3xl font-bold text-gray-900 group-hover:text-yellow-600 transition-colors">{customers.length}</h3>
-              </div>
-              <div className="p-3 bg-yellow-50 rounded-xl group-hover:bg-yellow-100 transition-colors">
-                <FaUsers className="text-yellow-600 text-xl" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        {/* Tabs */}
-        <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-2 rounded-2xl shadow-sm border border-gray-100 mb-8 sticky top-24 z-20 backdrop-blur-sm bg-white/90">
-          <nav className="flex space-x-1 bg-gray-100/50 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
-            {['products', 'orders', 'customers', 'analytics'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-2.5 px-6 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap ${activeTab === tab
-                  ? "bg-white text-green-700 shadow-md ring-1 ring-black/5"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
-                  }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Products Tab */}
-        {activeTab === "products" && (
-          <div className="space-y-6">
+          {activeTab === 'products' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 tracking-tight">My Products</h2>
@@ -887,100 +1142,80 @@ const SellerDashboard = () => {
                   <table className="min-w-full divide-y divide-gray-100">
                     <thead className="bg-gray-50/50">
                       <tr>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
-                          Product
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
-                          Category
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
-                          Price
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
-                          Stock
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">
-                          Actions
-                        </th>
+                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Product Details</th>
+                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Category</th>
+                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Financials</th>
+                        <th scope="col" className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Inventory</th>
+                        <th scope="col" className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                        <th scope="col" className="px-6 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
                       {products.map((product) => (
-                        <tr key={product._id} className="hover:bg-green-50/30 transition-colors duration-150 group">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-12 w-12 relative">
-                                {product.image ? (
-                                  <img
-                                    src={getImageUrl(product.image)}
-                                    alt={product.name}
-                                    className="h-12 w-12 rounded-xl object-cover shadow-sm group-hover:scale-110 transition-transform duration-300"
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.src = "https://placehold.co/48x48?text=No+Image";
-                                    }}
-                                  />
+                        <tr key={product._id} className="group hover:bg-green-50/20 transition-all duration-300 border-b border-gray-50 last:border-0">
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <div className="flex items-center gap-4">
+                              <div className="relative group/img h-14 w-14 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0 shadow-sm group-hover:shadow-md transition-all">
+                                {product.images && product.images.length > 0 ? (
+                                  <img src={getImageUrl(product.images[0])} alt={product.name} className="h-full w-full object-cover transition-transform duration-500 group-hover/img:scale-110" />
                                 ) : (
-                                  <div className="h-12 w-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 shadow-inner">
-                                    <FaImage />
+                                  <div className="h-full w-full flex items-center justify-center text-gray-300">
+                                    <FaImage className="text-xl" />
                                   </div>
                                 )}
                               </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-bold text-gray-900">{product.name}</div>
-                                <div className="text-xs text-gray-500 line-clamp-1 max-w-xs mt-0.5">{product.description || "No description"}</div>
+                              <div className="overflow-hidden max-w-[200px]">
+                                <h4 className="text-sm font-black text-gray-900 truncate tracking-tight">{product.name}</h4>
+                                <p className="text-[10px] text-gray-400 font-bold truncate mt-0.5">ID: {product._id.slice(-8).toUpperCase()}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              {product.category || "-"}
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <span className="px-3 py-1.5 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-lg border border-gray-200/50">
+                              {product.category || "General"}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-bold text-gray-900 font-mono">₹{product.price}</div>
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-black text-gray-900">{formatCurrency(product.price)}</span>
+                              <span className="text-[9px] text-green-600 font-bold uppercase tracking-tighter">Gross Margin: High</span>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">{product.stock} units</div>
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 w-12 bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                <div className={`h-full transition-all duration-1000 ${product.stock < 10 ? 'bg-orange-500' : 'bg-green-500'}`} style={{ width: `${Math.min(100, (product.stock / 50) * 100)}%` }} />
+                              </div>
+                              <span className={`text-xs font-black ${product.stock < 10 ? 'text-orange-600' : 'text-gray-900'}`}>
+                                {product.stock} <span className="text-[10px] text-gray-400 font-bold">qty</span>
+                              </span>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${product.status === "active"
-                              ? "bg-green-50 text-green-700 border-green-100"
-                              : "bg-red-50 text-red-700 border-red-100"
-                              }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full mr-2 mt-1.5 ${product.status === "active" ? "bg-green-500" : "bg-red-500"}`}></span>
-                              {product.status}
+                          <td className="px-6 py-5 whitespace-nowrap text-center">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
+                              product.status === "active"
+                                ? "bg-green-50 text-green-700 border-green-100 shadow-sm shadow-green-100/50"
+                                : "bg-gray-50 text-gray-400 border-gray-100"
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${product.status === "active" ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                              {product.status || "Inactive"}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end space-x-2">
+                          <td className="px-6 py-5 whitespace-nowrap text-right">
+                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
                               <button
-                                onClick={() => {
-                                  setEditingProduct(product);
-                                  setProductForm({
-                                    name: product.name,
-                                    description: product.description || "",
-                                    price: product.price.toString(),
-                                    stock: product.stock.toString(),
-                                    category: product.category || "",
-                                    image: null
-                                  });
-                                  setShowAddProductForm(true);
-                                }}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Edit"
+                                onClick={() => handleEditProduct(product)}
+                                className="p-2.5 bg-white text-gray-500 hover:text-blue-600 rounded-xl border border-gray-100 hover:border-blue-100 shadow-sm transition-all"
+                                title="Edit Listing"
                               >
-                                <FaEdit />
+                                <FaEdit className="text-sm" />
                               </button>
                               <button
-                                onClick={() => handleDelete(product._id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
+                                onClick={() => handleDeleteProduct(product._id)}
+                                className="p-2.5 bg-white text-gray-500 hover:text-red-500 rounded-xl border border-gray-100 hover:border-red-100 shadow-sm transition-all"
+                                title="Delete Listing"
                               >
-                                <FaTrash />
+                                <FaTrash className="text-sm" />
                               </button>
                             </div>
                           </td>
@@ -1510,6 +1745,100 @@ const SellerDashboard = () => {
             </div>
           )
         }
+
+        {/* Recycling Tab */}
+        {activeTab === "recycling" && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Recycling Data Entry</h2>
+                <p className="text-sm text-gray-500 mt-1">Track your waste collection and recycling progress</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRecyclingForm(true);
+                  setEditingRecycling(null);
+                  setRecyclingForm({
+                    month: "",
+                    totalWasteCollected: "",
+                    wasteBreakdown: [{ wasteType: "", quantity: "" }],
+                    recycledProducts: [{ itemName: "", quantity: "" }]
+                  });
+                }}
+                className="inline-flex items-center px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg transition-all duration-200 font-semibold active:scale-95"
+              >
+                <FaPlus className="mr-2" />
+                Add Entry
+              </button>
+            </div>
+
+            {/* Stock Overview Cards */}
+            {recyclingData.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(calculateTotalStock()).map(([name, qty]) => (
+                  <div key={name} className="bg-gradient-to-br from-green-50 to-white p-5 rounded-2xl border border-green-100 shadow-sm">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-bold text-green-600 uppercase tracking-wider mb-1">{name}</p>
+                        <h4 className="text-2xl font-black text-gray-900">{qty}</h4>
+                        <p className="text-[10px] text-gray-400 mt-1">Total Available Stock</p>
+                      </div>
+                      <div className="p-2 bg-green-100/50 rounded-lg">
+                        <FaShoppingBag className="text-green-600 text-lg" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {recyclingData.length > 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-100">
+                    <thead className="bg-gray-50/50">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Month</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Total Waste (items)</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Waste Breakdown</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Recycled Products</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {recyclingData.map((item) => (
+                        <tr key={item._id} className="hover:bg-green-50/30 transition-colors">
+                          <td className="px-6 py-4 text-sm font-bold text-gray-900">{item.month}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{item.totalWasteCollected}</td>
+                          <td className="px-6 py-4 text-xs text-gray-500">
+                            {item.wasteBreakdown?.map((wb, i) => (
+                              <div key={i}>{wb.wasteType}: {wb.quantity}</div>
+                            ))}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-gray-500">
+                            {item.recycledProducts?.map((p, i) => (
+                              <div key={i}>{p.itemName}: {p.quantity}</div>
+                            ))}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => handleEditRecycling(item)} className="text-blue-600 hover:text-blue-800 mr-3"><FaEdit /></button>
+                            <button onClick={() => handleDeleteRecycling(item._id)} className="text-red-600 hover:text-red-800"><FaTrash /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center">
+                <FaChartBar className="mx-auto text-gray-300 text-4xl mb-4" />
+                <h3 className="text-lg font-bold">No data entries yet</h3>
+                <p className="text-gray-500">Start tracking your recycling metrics today.</p>
+              </div>
+            )}
+          </div>
+        )}
       </main >
 
       {/* Add/Edit Product Modal */}
@@ -1729,9 +2058,236 @@ const SellerDashboard = () => {
         )
       }
 
+      {/* Recycling Data Modal Redesigned */}
+      {showRecyclingForm && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-100 animate-in fade-in zoom-in duration-300">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gradient-to-r from-green-50/50 to-white">
+              <div>
+                <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+                  {editingRecycling ? "Edit Entry" : "Add Recycling Data"}
+                </h3>
+                <p className="text-xs font-semibold text-green-600 uppercase tracking-widest mt-1">Sustainability Reporting</p>
+              </div>
+              <button 
+                onClick={() => setShowRecyclingForm(false)} 
+                className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all duration-200 group"
+              >
+                <FaTimes className="text-xl group-hover:rotate-90 transition-transform duration-300" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+              <form id="recyclingForm" onSubmit={handleRecyclingSubmit} className="space-y-8">
+                
+                {/* Section 1: Basic Information */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                      <FaCalendarAlt />
+                    </div>
+                    <h4 className="font-bold text-gray-800">Basic Information</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-600 mb-2 ml-1">Reporting Month</label>
+                      <select
+                        name="month"
+                        value={recyclingForm.month}
+                        onChange={handleRecyclingInputChange}
+                        required
+                        className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-medium text-gray-700"
+                      >
+                        <option value="">Select Month</option>
+                        {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-600 mb-2 ml-1">Total Waste Collected</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="totalWasteCollected"
+                          value={recyclingForm.totalWasteCollected}
+                          onChange={handleRecyclingInputChange}
+                          required
+                          placeholder="e.g. 1200"
+                          className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-bold text-gray-900"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 uppercase">Items</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Waste Type Breakdown (Redesigned with Dropdown/Manual) */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
+                        <FaRecycle />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-800">Waste Type Breakdown</h4>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Quantities in Kg/Items</p>
+                      </div>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={addWasteBreakdown} 
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl border border-green-100 hover:bg-green-100 transition-all font-bold text-sm"
+                    >
+                      <FaPlus />
+                      Add Waste
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {recyclingForm.wasteBreakdown.map((wb, idx) => (
+                      <div key={idx} className="group relative grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/20 p-6 rounded-2xl border border-gray-50 hover:bg-white hover:border-green-100 transition-all">
+                        <div className="space-y-3">
+                          <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Type of Waste</label>
+                          <div className="flex flex-col gap-2">
+                            <select 
+                              value={['Paper', 'Plastic', 'Organic'].includes(wb.wasteType) ? wb.wasteType : (wb.wasteType === "" ? "" : "Other")}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "Other") updateWasteBreakdown(idx, 'wasteType', "");
+                                else updateWasteBreakdown(idx, 'wasteType', val);
+                              }}
+                              className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-bold text-gray-700"
+                            >
+                              <option value="">Select Category</option>
+                              <option value="Plastic">Plastic</option>
+                              <option value="Paper">Paper</option>
+                              <option value="Organic">Organic</option>
+                              <option value="Other">Custom Type...</option>
+                            </select>
+                            
+                            {(!['Paper', 'Plastic', 'Organic'].includes(wb.wasteType) || (wb.wasteType === "" && recyclingForm.wasteBreakdown[idx].wasteType === "Other")) && (
+                              <input 
+                                type="text"
+                                value={wb.wasteType}
+                                onChange={(e) => updateWasteBreakdown(idx, 'wasteType', e.target.value)}
+                                placeholder="Enter custom type"
+                                className="w-full p-3 bg-green-50/50 border border-green-100 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-bold animate-in slide-in-from-top-2 duration-200"
+                              />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-4 items-end">
+                          <div className="flex-1">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Quantity</label>
+                            <input 
+                              type="text" 
+                              value={wb.quantity} 
+                              onChange={(e) => updateWasteBreakdown(idx, 'quantity', e.target.value)} 
+                              className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-bold" 
+                              placeholder="0"
+                            />
+                          </div>
+                          {recyclingForm.wasteBreakdown.length > 1 && (
+                            <button 
+                              type="button" 
+                              onClick={() => removeWasteBreakdown(idx)}
+                              className="p-3 bg-white text-red-500 rounded-xl border border-gray-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all shadow-sm"
+                            >
+                              <FaTrash />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 3: Recycled Products dynamic list */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
+                        <FaIndustry />
+                      </div>
+                      <h4 className="font-bold text-gray-800">Recycled Products & Stock</h4>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={addRecycledProduct} 
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl border border-green-100 hover:bg-green-100 transition-all font-bold text-sm"
+                    >
+                      <FaPlus />
+                      Add Product
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {recyclingForm.recycledProducts.map((prod, idx) => (
+                      <div key={idx} className="group relative grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-2xl border border-gray-100 transition-all hover:bg-white hover:border-green-100">
+                        <div>
+                          <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Product Name</label>
+                          <input 
+                            type="text" 
+                            value={prod.itemName} 
+                            onChange={(e) => updateRecycledProduct(idx, 'itemName', e.target.value)} 
+                            className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all placeholder:text-gray-300 font-bold" 
+                            placeholder="e.g. Eco Bricks"
+                          />
+                        </div>
+                        <div className="flex gap-4 items-end">
+                          <div className="flex-1">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Quantity Created</label>
+                            <input 
+                              type="text" 
+                              value={prod.quantity} 
+                              onChange={(e) => updateRecycledProduct(idx, 'quantity', e.target.value)} 
+                              className="w-full p-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-bold" 
+                              placeholder="0"
+                            />
+                          </div>
+                          {recyclingForm.recycledProducts.length > 1 && (
+                            <button 
+                              type="button" 
+                              onClick={() => removeRecycledProduct(idx)}
+                              className="p-3 bg-white text-red-500 rounded-xl border border-gray-100 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all shadow-sm"
+                            >
+                              <FaTrash />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-50 flex gap-4 bg-gray-50/30">
+              <button
+                type="button"
+                onClick={() => setShowRecyclingForm(false)}
+                className="flex-1 py-4 px-6 border border-gray-200 rounded-2xl font-bold text-gray-600 hover:bg-white hover:border-gray-300 transition-all shadow-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="recyclingForm"
+                className="flex-[2] py-4 px-6 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white rounded-2xl font-bold transition-all shadow-xl shadow-green-200 active:scale-95"
+              >
+                {editingRecycling ? "Update Entry" : "Save Entry"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Profile Modal */}
-      {
-        showProfileModal && (
+      {showProfileModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
               <div className="p-6">
@@ -2014,12 +2570,10 @@ const SellerDashboard = () => {
               </div>
             </div>
           </div>
-        )
-      }
+        )}
 
       {/* Order Details Modal */}
-      {
-        showOrderDetailsModal && selectedOrder && (
+      {showOrderDetailsModal && selectedOrder && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
               <div className="p-6">
@@ -2212,12 +2766,10 @@ const SellerDashboard = () => {
               </div>
             </div>
           </div>
-        )
-      }
+        )}
 
       {/* Customer Details Modal */}
-      {
-        showCustomerDetailsModal && selectedCustomer && (
+      {showCustomerDetailsModal && selectedCustomer && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
               <div className="p-6">
@@ -2414,6 +2966,7 @@ const SellerDashboard = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

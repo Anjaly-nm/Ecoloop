@@ -1,16 +1,34 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const CleaningRequest = require('../models/user/cleaningRequest');
-const { isCollector } = require('../middlewares/middleware'); // Need middleware
+const { isCollector } = require('../middlewares/middleware');
+
+// Multer Setup
+const uploadDir = path.join(__dirname, '..', 'uploads', 'cleaning');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => cb(null, `cleaning-${Date.now()}${path.extname(file.originalname)}`)
+});
+
+const upload = multer({ storage });
 
 // Create a new cleaning service request
-router.post('/', async (req, res) => {
+router.post('/', upload.array('images', 5), async (req, res) => {
     try {
-        const { user_id, eventType, scheduled_date, time, location, wasteTypes, additionalNotes } = req.body;
+        const { user_id, eventType, scheduled_date, time, location, wasteTypes, additionalNotes, priority } = req.body;
 
         if (!user_id || !eventType || !scheduled_date || !time || !location) {
             return res.status(400).json({ message: "Missing required fields" });
         }
+
+        const imagePaths = req.files ? req.files.map(file => `uploads/cleaning/${file.filename}`) : [];
 
         const newRequest = new CleaningRequest({
             user_id,
@@ -18,8 +36,10 @@ router.post('/', async (req, res) => {
             scheduled_date,
             time,
             location,
-            wasteTypes: wasteTypes || [],
-            additionalNotes
+            wasteTypes: Array.isArray(wasteTypes) ? wasteTypes : (wasteTypes ? [wasteTypes] : []),
+            additionalNotes,
+            priority: priority || 'Medium',
+            images: imagePaths
         });
 
         await newRequest.save();
@@ -41,7 +61,7 @@ router.post('/', async (req, res) => {
                 await notif.save();
             }
         } catch (notifErr) {
-            console.error("Error creating admin notification for new cleaning request:", notifErr);
+            console.error("Error creating admin notification:", notifErr);
         }
 
         res.status(201).json({ message: "Cleaning service request submitted successfully!", data: newRequest });
@@ -54,7 +74,6 @@ router.post('/', async (req, res) => {
 // Get all requests for Admin
 router.get('/', async (req, res) => {
     try {
-        // Populating user and team details if referenced
         const requests = await CleaningRequest.find()
             .populate('user_id', 'name phone email')
             .populate('team', 'name phone')
@@ -86,7 +105,6 @@ router.get('/user/:userId', async (req, res) => {
 router.get('/collector', isCollector, async (req, res) => {
     try {
         const collectorId = req.user._id;
-        // Find requests where the collectorId is in the team array
         const requests = await CleaningRequest.find({ team: collectorId })
             .populate('user_id', 'name phone email address')
             .populate('team', 'name phone')
@@ -106,24 +124,21 @@ router.put('/:id/assign', async (req, res) => {
         const { team } = req.body;
 
         if (!team || !Array.isArray(team) || team.length === 0) {
-            return res.status(400).json({ message: "Team is required and must correctly contain assigned collector IDs" });
+            return res.status(400).json({ message: "Team is required" });
         }
 
         const updatedRequest = await CleaningRequest.findByIdAndUpdate(
             id,
             { team, status: "assigned" },
             { new: true }
-        ).populate('user_id', 'name phone email').populate('team', 'name phone fcmToken');
+        ).populate('user_id', 'name phone email').populate('team', 'name phone');
 
         if (!updatedRequest) {
             return res.status(404).json({ message: "Request not found" });
         }
 
-        // Try importing Notification from models
         try {
             const Notification = require('../models/user/notification');
-            
-            // Send in-app notification to all assigned team members
             for (let collectorId of team) {
                 const newNotification = new Notification({
                     userId: collectorId,
@@ -147,16 +162,13 @@ router.put('/:id/assign', async (req, res) => {
 });
 
 // Mark a cleaning request as completed
-router.put('/:id/complete', isCollector, async (req, res) => {
+router.put('/:id/complete', async (req, res) => {
     try {
         const { id } = req.params;
-        const collectorId = req.user._id;
-
-        // Verify that the logged-in collector is part of the assigned team
-        const request = await CleaningRequest.findOne({ _id: id, team: collectorId });
+        const request = await CleaningRequest.findById(id);
 
         if (!request) {
-            return res.status(404).json({ message: "Request not found or you are not assigned to it" });
+            return res.status(404).json({ message: "Request not found" });
         }
 
         request.status = "completed";
