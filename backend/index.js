@@ -105,17 +105,26 @@ app.get('/', (req, res) => {
 // Test Firebase Admin route
 app.get('/test-firebase', async (req, res) => {
   try {
+    if (!firebaseAuth) {
+      return res.status(503).json({
+        success: false,
+        message: 'Firebase is not configured in this environment.'
+      });
+    }
+
     // Try to get the Firebase project info
-    const projectId = await firebaseAuth.projectId;
+    const projectId = firebaseAuth.app.options.projectId;
     console.log('Firebase project ID:', projectId);
 
     res.json({
+      success: true,
       message: 'Firebase Admin SDK is working',
       projectId: projectId || 'Unable to get project ID'
     });
   } catch (error) {
     console.error('Firebase test error:', error);
     res.status(500).json({
+      success: false,
       message: 'Firebase Admin SDK test failed',
       error: error.message
     });
